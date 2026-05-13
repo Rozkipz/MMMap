@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -78,10 +79,68 @@ private const val USER_LAYER_ID  = "user-location-layer"
 private const val PROP_RESTAURANT_ID = "id"
 private const val PROP_DISTINCTION   = "distinction"
 
-// OpenFreeMap — free, production-grade MapLibre tile service, no API key required
-private const val TILE_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+// OpenFreeMap light style; CARTO Dark Matter for dark mode (both free, no API key)
+private const val TILE_STYLE_URL      = "https://tiles.openfreemap.org/styles/liberty"
+private const val TILE_STYLE_DARK_URL = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
 
 private fun Color.toCssHex(): String = "#%06X".format(toArgb() and 0xFFFFFF)
+
+private fun buildCollection(restaurants: List<app.mmmap.domain.model.Restaurant>): FeatureCollection {
+    val features = restaurants.map { r ->
+        val props = JsonObject().apply {
+            addProperty(PROP_RESTAURANT_ID, r.id)
+            addProperty(PROP_DISTINCTION, r.distinction.label)
+        }
+        Feature.fromGeometry(Point.fromLngLat(r.longitude, r.latitude), props)
+    }
+    return FeatureCollection.fromFeatures(features)
+}
+
+private fun addCustomLayers(style: Style, mapHolder: MapHolder) {
+    val restaurantSource = GeoJsonSource(SOURCE_ID)
+    style.addSource(restaurantSource)
+    style.addLayer(
+        CircleLayer(LAYER_ID, SOURCE_ID).withProperties(
+            PropertyFactory.circleColor(
+                Expression.match(
+                    Expression.get(PROP_DISTINCTION),
+                    Expression.literal(SelectedBlue.toCssHex()),
+                    Expression.stop("3 Stars",      StarGold.toCssHex()),
+                    Expression.stop("2 Stars",      TwoStarGold.toCssHex()),
+                    Expression.stop("1 Star",       OneStarRed.toCssHex()),
+                    Expression.stop("Bib Gourmand", BibGreen.toCssHex()),
+                )
+            ),
+            PropertyFactory.circleRadius(
+                Expression.match(
+                    Expression.get(PROP_DISTINCTION),
+                    Expression.literal(9f),
+                    Expression.stop("3 Stars",      14f),
+                    Expression.stop("2 Stars",      13f),
+                    Expression.stop("1 Star",       12f),
+                    Expression.stop("Bib Gourmand", 10f),
+                )
+            ),
+            PropertyFactory.circleStrokeWidth(1.5f),
+            PropertyFactory.circleStrokeColor("#FFFFFF"),
+            PropertyFactory.circleOpacity(0.9f),
+        )
+    )
+    style.addSource(GeoJsonSource(USER_SOURCE_ID))
+    style.addLayer(
+        CircleLayer(USER_LAYER_ID, USER_SOURCE_ID).withProperties(
+            PropertyFactory.circleRadius(8f),
+            PropertyFactory.circleColor(MichelinRed.toCssHex()),
+            PropertyFactory.circleStrokeWidth(2.5f),
+            PropertyFactory.circleStrokeColor("#FFFFFF"),
+            PropertyFactory.circleOpacity(1f),
+        )
+    )
+    mapHolder.pendingRestaurantCollection?.let {
+        restaurantSource.setGeoJson(it)
+        mapHolder.pendingRestaurantCollection = null
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,6 +153,7 @@ fun MapScreen(
     val filters            by viewModel.filters.collectAsState()
     val userLatLon         by viewModel.userLatLon.collectAsState()
     val isLocating         by viewModel.isLocating.collectAsState()
+    val isDarkTheme        = isSystemInDarkTheme()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -102,16 +162,15 @@ fun MapScreen(
     val mapHolder = remember { MapHolder() }
 
     LaunchedEffect(userLatLon) {
-        val map = mapHolder.map ?: return@LaunchedEffect
-        val loc = userLatLon
-        if (loc != null) {
+        val loc = userLatLon ?: return@LaunchedEffect
+        val map = mapHolder.map
+        if (map != null) {
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(loc.first, loc.second), 14.0))
-        }
-        map.style?.getSourceAs<GeoJsonSource>(USER_SOURCE_ID)?.let { src ->
-            if (loc != null)
-                src.setGeoJson(Feature.fromGeometry(Point.fromLngLat(loc.second, loc.first)))
-            else
-                src.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
+            map.style?.getSourceAs<GeoJsonSource>(USER_SOURCE_ID)
+                ?.setGeoJson(Feature.fromGeometry(Point.fromLngLat(loc.second, loc.first)))
+        } else {
+            // Map not ready yet — store so the getMapAsync callback can apply it
+            mapHolder.pendingCameraTarget = loc
         }
     }
 
@@ -161,55 +220,17 @@ fun MapScreen(
                     onResume()
                     getMapAsync { libMap ->
                         mapHolder.map = libMap
-                        libMap.setStyle(Style.Builder().fromUri(TILE_STYLE_URL)) { style ->
-                            // Restaurant dots — circle colour and size by distinction
-                            val restaurantSource = GeoJsonSource(SOURCE_ID)
-                            style.addSource(restaurantSource)
-                            style.addLayer(
-                                CircleLayer(LAYER_ID, SOURCE_ID).withProperties(
-                                    PropertyFactory.circleColor(
-                                        Expression.match(
-                                            Expression.get(PROP_DISTINCTION),
-                                            Expression.literal(SelectedBlue.toCssHex()),
-                                            Expression.stop("3 Stars",      StarGold.toCssHex()),
-                                            Expression.stop("2 Stars",      TwoStarGold.toCssHex()),
-                                            Expression.stop("1 Star",       OneStarRed.toCssHex()),
-                                            Expression.stop("Bib Gourmand", BibGreen.toCssHex()),
-                                        )
-                                    ),
-                                    PropertyFactory.circleRadius(
-                                        Expression.match(
-                                            Expression.get(PROP_DISTINCTION),
-                                            Expression.literal(9f),
-                                            Expression.stop("3 Stars",      14f),
-                                            Expression.stop("2 Stars",      13f),
-                                            Expression.stop("1 Star",       12f),
-                                            Expression.stop("Bib Gourmand", 10f),
-                                        )
-                                    ),
-                                    PropertyFactory.circleStrokeWidth(1.5f),
-                                    PropertyFactory.circleStrokeColor("#FFFFFF"),
-                                    PropertyFactory.circleOpacity(0.9f),
-                                )
+                        val initialUrl = if (isDarkTheme) TILE_STYLE_DARK_URL else TILE_STYLE_URL
+                        mapHolder.appliedStyleUrl = initialUrl
+                        libMap.setStyle(Style.Builder().fromUri(initialUrl)) { style ->
+                            addCustomLayers(style, mapHolder)
+                        }
+                        // Restore camera to user location if already known (e.g. after tab switch)
+                        mapHolder.pendingCameraTarget?.let { (lat, lon) ->
+                            libMap.animateCamera(
+                                CameraUpdateFactory.newLatLngZoom(LatLng(lat, lon), 14.0)
                             )
-
-                            // User location dot — red circle with white stroke
-                            style.addSource(GeoJsonSource(USER_SOURCE_ID))
-                            style.addLayer(
-                                CircleLayer(USER_LAYER_ID, USER_SOURCE_ID).withProperties(
-                                    PropertyFactory.circleRadius(8f),
-                                    PropertyFactory.circleColor(MichelinRed.toCssHex()),
-                                    PropertyFactory.circleStrokeWidth(2.5f),
-                                    PropertyFactory.circleStrokeColor("#FFFFFF"),
-                                    PropertyFactory.circleOpacity(1f),
-                                )
-                            )
-
-                            // Flush any restaurant data that arrived before the style loaded
-                            mapHolder.pendingRestaurantCollection?.let {
-                                restaurantSource.setGeoJson(it)
-                                mapHolder.pendingRestaurantCollection = null
-                            }
+                            mapHolder.pendingCameraTarget = null
                         }
                         libMap.addOnCameraIdleListener {
                             val region = libMap.projection.visibleRegion
@@ -240,21 +261,23 @@ fun MapScreen(
                 }
             },
             update = { _ ->
-                val features = restaurants.map { r ->
-                    val props = JsonObject().apply {
-                        addProperty(PROP_RESTAURANT_ID, r.id)
-                        addProperty(PROP_DISTINCTION, r.distinction.label)
+                val map = mapHolder.map ?: return@AndroidView
+                val expectedUrl = if (isDarkTheme) TILE_STYLE_DARK_URL else TILE_STYLE_URL
+
+                if (mapHolder.appliedStyleUrl != expectedUrl) {
+                    // Theme changed — stash restaurants so the reload callback can reapply them
+                    mapHolder.pendingRestaurantCollection = buildCollection(restaurants)
+                    mapHolder.appliedStyleUrl = expectedUrl
+                    map.setStyle(Style.Builder().fromUri(expectedUrl)) { style ->
+                        addCustomLayers(style, mapHolder)
                     }
-                    Feature.fromGeometry(Point.fromLngLat(r.longitude, r.latitude), props)
+                    return@AndroidView
                 }
-                val collection = FeatureCollection.fromFeatures(features)
-                val source = mapHolder.map?.style?.getSourceAs<GeoJsonSource>(SOURCE_ID)
-                if (source != null) {
-                    source.setGeoJson(collection)
-                } else {
-                    // Style not ready yet — stash for the style-loaded callback to apply
-                    mapHolder.pendingRestaurantCollection = collection
-                }
+
+                val collection = buildCollection(restaurants)
+                val source = map.style?.getSourceAs<GeoJsonSource>(SOURCE_ID)
+                if (source != null) source.setGeoJson(collection)
+                else mapHolder.pendingRestaurantCollection = collection
             },
             modifier = Modifier.fillMaxSize(),
         )
@@ -325,6 +348,8 @@ private class MapHolder {
     var mapView: MapView? = null
     var map: MapLibreMap? = null
     var pendingRestaurantCollection: FeatureCollection? = null
+    var appliedStyleUrl: String? = null
+    var pendingCameraTarget: Pair<Double, Double>? = null
 }
 
 private fun Distinction.chipLabel() = when (this) {
