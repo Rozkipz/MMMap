@@ -24,7 +24,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -115,7 +114,7 @@ internal fun RestaurantSheetContent(
             }
         }
 
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(4.dp))
 
         Text(restaurant.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
 
@@ -140,7 +139,7 @@ internal fun RestaurantSheetContent(
                     statusLabel,
                     style = MaterialTheme.typography.labelMedium,
                     color = if (enrichment.isOpenNow == true)
-                        androidx.compose.ui.graphics.Color(0xFF2E7D32)
+                        GreenStar
                     else
                         MaterialTheme.colorScheme.error,
                 )
@@ -163,13 +162,22 @@ internal fun RestaurantSheetContent(
             ?.let { facilities ->
                 Spacer(Modifier.height(12.dp))
                 FlowRow(
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
                 ) {
                     facilities.forEach { facility ->
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text(facility, style = MaterialTheme.typography.labelSmall) },
-                        )
+                        androidx.compose.material3.Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.padding(vertical = 2.dp),
+                        ) {
+                            Text(
+                                facility,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            )
+                        }
                     }
                 }
             }

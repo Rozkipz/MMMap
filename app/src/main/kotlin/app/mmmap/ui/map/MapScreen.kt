@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
@@ -38,6 +37,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,6 +49,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.gson.JsonObject
 import app.mmmap.domain.model.Distinction
 import app.mmmap.ui.detail.RestaurantSheet
+import app.mmmap.ui.theme.BibGreen
+import app.mmmap.ui.theme.MichelinRed
+import app.mmmap.ui.theme.OneStarRed
+import app.mmmap.ui.theme.SelectedBlue
+import app.mmmap.ui.theme.StarGold
+import app.mmmap.ui.theme.TwoStarGold
 import kotlinx.coroutines.launch
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
@@ -73,10 +81,12 @@ private const val PROP_DISTINCTION   = "distinction"
 // OpenFreeMap — free, production-grade MapLibre tile service, no API key required
 private const val TILE_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 
+private fun Color.toCssHex(): String = "#%06X".format(toArgb() and 0xFFFFFF)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
-    onNavigateToNearby: () -> Unit = {},
+    bottomPadding: Dp = 0.dp,
     viewModel: MapViewModel = hiltViewModel(),
 ) {
     val restaurants        by viewModel.restaurants.collectAsState()
@@ -160,11 +170,11 @@ fun MapScreen(
                                     PropertyFactory.circleColor(
                                         Expression.match(
                                             Expression.get(PROP_DISTINCTION),
-                                            Expression.literal("#1565C0"), // default / Selected — blue
-                                            Expression.stop("3 Stars",      "#FFD700"),
-                                            Expression.stop("2 Stars",      "#FFA500"),
-                                            Expression.stop("1 Star",       "#E2231A"),
-                                            Expression.stop("Bib Gourmand", "#00AA66"),
+                                            Expression.literal(SelectedBlue.toCssHex()),
+                                            Expression.stop("3 Stars",      StarGold.toCssHex()),
+                                            Expression.stop("2 Stars",      TwoStarGold.toCssHex()),
+                                            Expression.stop("1 Star",       OneStarRed.toCssHex()),
+                                            Expression.stop("Bib Gourmand", BibGreen.toCssHex()),
                                         )
                                     ),
                                     PropertyFactory.circleRadius(
@@ -188,7 +198,7 @@ fun MapScreen(
                             style.addLayer(
                                 CircleLayer(USER_LAYER_ID, USER_SOURCE_ID).withProperties(
                                     PropertyFactory.circleRadius(8f),
-                                    PropertyFactory.circleColor("#D32F2F"),
+                                    PropertyFactory.circleColor(MichelinRed.toCssHex()),
                                     PropertyFactory.circleStrokeWidth(2.5f),
                                     PropertyFactory.circleStrokeColor("#FFFFFF"),
                                     PropertyFactory.circleOpacity(1f),
@@ -281,8 +291,7 @@ fun MapScreen(
             onClick = { if (!isLocating) viewModel.locateUser() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
-                .padding(16.dp),
+                .padding(bottom = bottomPadding + 16.dp, end = 16.dp),
         ) {
             if (isLocating) {
                 CircularProgressIndicator(
