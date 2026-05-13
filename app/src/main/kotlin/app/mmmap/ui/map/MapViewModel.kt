@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
+import android.os.CancellationSignal
 import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
@@ -17,6 +19,8 @@ import app.mmmap.domain.model.Restaurant
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -72,8 +76,14 @@ class MapViewModel @Inject constructor(
     val isLocating: StateFlow<Boolean> = _isLocating
 
     private var pendingLocationListener: LocationListener? = null
+    private var pendingCancellationSignal: CancellationSignal? = null
+    private var locateTimeoutJob: Job? = null
     private val locationManager by lazy {
         context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    }
+
+    private companion object {
+        const val LOCATE_TIMEOUT_MS = 60_000L
     }
 
     init {
@@ -89,49 +99,80 @@ class MapViewModel @Inject constructor(
 
     @SuppressLint("MissingPermission")
     fun locateUser() {
-        val hasPerm = ContextCompat.checkSelfPermission(
+        val hasFine = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED ||
-        ContextCompat.checkSelfPermission(
+        ) == PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-        if (!hasPerm) return
+        if (!hasFine && !hasCoarse) return
 
-        // Show last known location immediately for instant feedback
         val last = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
             .mapNotNull { runCatching { locationManager.getLastKnownLocation(it) }.getOrNull() }
             .maxByOrNull { it.time }
         if (last != null) _userLatLon.value = last.latitude to last.longitude
 
-        // Cancel any pending request then ask for a fresh fix
         pendingLocationListener?.let { locationManager.removeUpdates(it) }
-        val enabledProviders = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER)
-            .filter { locationManager.isProviderEnabled(it) }
+        pendingCancellationSignal?.cancel()
+        pendingCancellationSignal = null
+
+        val enabledProviders = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+            .filter { runCatching { locationManager.isProviderEnabled(it) }.getOrElse { false } }
         if (enabledProviders.isEmpty()) return
 
-        _isLocating.value = true
-        var fired = false
-        val wrappedListener = object : LocationListener {
-            override fun onLocationChanged(loc: Location) {
-                if (fired) return
-                fired = true
-                _isLocating.value = false
-                _userLatLon.value = loc.latitude to loc.longitude
-                locationManager.removeUpdates(this)
-                pendingLocationListener = null
-            }
-            override fun onProviderDisabled(p: String) {}
-            override fun onProviderEnabled(p: String) {}
+        // Only show spinner when we have no position yet; a cached fix is enough to hide it
+        if (last == null) _isLocating.value = true
+        locateTimeoutJob?.cancel()
+        locateTimeoutJob = viewModelScope.launch {
+            delay(LOCATE_TIMEOUT_MS)
+            _isLocating.value = false
+            pendingCancellationSignal?.cancel()
+            pendingCancellationSignal = null
+            pendingLocationListener?.let { locationManager.removeUpdates(it) }
+            pendingLocationListener = null
         }
-        pendingLocationListener = wrappedListener
-        enabledProviders.forEach { provider ->
-            @Suppress("DEPRECATION")
-            locationManager.requestSingleUpdate(provider, wrappedListener, Looper.getMainLooper())
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val provider = if (hasFine && LocationManager.GPS_PROVIDER in enabledProviders)
+                LocationManager.GPS_PROVIDER
+            else
+                enabledProviders.first()
+            val signal = CancellationSignal()
+            pendingCancellationSignal = signal
+            locationManager.getCurrentLocation(provider, signal, context.mainExecutor) { loc ->
+                locateTimeoutJob?.cancel()
+                _isLocating.value = false
+                pendingCancellationSignal = null
+                if (loc != null) _userLatLon.value = loc.latitude to loc.longitude
+            }
+        } else {
+            var fired = false
+            val listener = object : LocationListener {
+                override fun onLocationChanged(loc: Location) {
+                    if (fired) return
+                    fired = true
+                    locateTimeoutJob?.cancel()
+                    _isLocating.value = false
+                    _userLatLon.value = loc.latitude to loc.longitude
+                    locationManager.removeUpdates(this)
+                    pendingLocationListener = null
+                }
+                override fun onProviderDisabled(p: String) {}
+                override fun onProviderEnabled(p: String) {}
+            }
+            pendingLocationListener = listener
+            enabledProviders.forEach { provider ->
+                runCatching {
+                    locationManager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())
+                }
+            }
         }
     }
 
     override fun onCleared() {
         super.onCleared()
+        locateTimeoutJob?.cancel()
+        pendingCancellationSignal?.cancel()
         pendingLocationListener?.let { locationManager.removeUpdates(it) }
     }
 }

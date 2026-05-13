@@ -3,12 +3,15 @@ package app.mmmap.ui.detail
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,11 +21,10 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,14 +37,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil3.compose.AsyncImage
 import app.mmmap.domain.model.Distinction
+import app.mmmap.domain.model.FoursquareDetail
 import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.theme.BibBrown
-import app.mmmap.ui.theme.MichelinRed
-import app.mmmap.ui.theme.SelectedGray
+import app.mmmap.ui.theme.GreenStar
+import app.mmmap.ui.theme.SelectedBlue
 import app.mmmap.ui.theme.StarGold
+import coil3.compose.AsyncImage
 
+/** ViewModel-connected entry point used by the navigation graph. */
 @Composable
 fun RestaurantSheet(
     restaurant: Restaurant,
@@ -51,9 +55,20 @@ fun RestaurantSheet(
 ) {
     val enrichment by viewModel.enrichment.collectAsState()
     val loading by viewModel.loading.collectAsState()
-    val context = LocalContext.current
-
     LaunchedEffect(restaurant.id) { viewModel.loadEnrichment(restaurant) }
+    RestaurantSheetContent(restaurant, onDismiss, enrichment, loading)
+}
+
+/** Pure-state composable — no ViewModel dependency, directly testable. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun RestaurantSheetContent(
+    restaurant: Restaurant,
+    onDismiss: () -> Unit,
+    enrichment: FoursquareDetail?,
+    loading: Boolean,
+) {
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -74,16 +89,31 @@ fun RestaurantSheet(
                     .padding(bottom = 12.dp),
             )
         } else if (loading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(12.dp))
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(12.dp),
+            )
         }
 
-        // Distinction badge
-        Text(
-            text = restaurant.distinction.badgeLabel(),
-            style = MaterialTheme.typography.labelLarge,
-            color = restaurant.distinction.badgeColor(),
-            fontWeight = FontWeight.Bold,
-        )
+        // Distinction badge + optional Green Star
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = restaurant.distinction.badgeLabel(),
+                style = MaterialTheme.typography.labelLarge,
+                color = restaurant.distinction.badgeColor(),
+                fontWeight = FontWeight.Bold,
+            )
+            if (restaurant.greenStar) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "🌿 Green Star",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = GreenStar,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
 
         Spacer(Modifier.height(2.dp))
 
@@ -100,15 +130,20 @@ fun RestaurantSheet(
         // Opening hours
         enrichment?.openingHours?.takeIf { it.isNotEmpty() }?.let { hours ->
             Spacer(Modifier.height(12.dp))
-            val statusLabel = when (enrichment?.isOpenNow) {
-                true -> "Open now"
+            val statusLabel = when (enrichment.isOpenNow) {
+                true  -> "Open now"
                 false -> "Closed"
-                null -> ""
+                null  -> ""
             }
             if (statusLabel.isNotEmpty()) {
-                Text(statusLabel, style = MaterialTheme.typography.labelMedium,
-                    color = if (enrichment?.isOpenNow == true) androidx.compose.ui.graphics.Color(0xFF2E7D32)
-                    else MaterialTheme.colorScheme.error)
+                Text(
+                    statusLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (enrichment.isOpenNow == true)
+                        androidx.compose.ui.graphics.Color(0xFF2E7D32)
+                    else
+                        MaterialTheme.colorScheme.error,
+                )
             }
             hours.forEach { line -> Text(line, style = MaterialTheme.typography.bodySmall) }
         }
@@ -119,31 +154,60 @@ fun RestaurantSheet(
             Text(it, style = MaterialTheme.typography.bodyMedium)
         }
 
+        // Facilities & services chips
+        restaurant.facilitiesAndServices
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { facilities ->
+                Spacer(Modifier.height(12.dp))
+                FlowRow(
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+                ) {
+                    facilities.forEach { facility ->
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text(facility, style = MaterialTheme.typography.labelSmall) },
+                        )
+                    }
+                }
+            }
+
         Spacer(Modifier.height(16.dp))
 
         // Action row
         Row(verticalAlignment = Alignment.CenterVertically) {
             val phone = enrichment?.phone ?: restaurant.phoneNumber
             if (phone != null) {
-                IconButton(onClick = {
-                    context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
-                }) { Icon(Icons.Default.Phone, contentDescription = "Call") }
+                IconButton(
+                    onClick = {
+                        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+                    },
+                    modifier = Modifier.size(56.dp),
+                ) { Icon(Icons.Default.Phone, contentDescription = "Call", modifier = Modifier.size(28.dp)) }
             }
             restaurant.websiteUrl?.let { url ->
-                IconButton(onClick = {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                }) { Icon(Icons.Default.Public, contentDescription = "Website") }
+                IconButton(
+                    onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    },
+                    modifier = Modifier.size(56.dp),
+                ) { Icon(Icons.Default.Public, contentDescription = "Website", modifier = Modifier.size(28.dp)) }
             }
-            IconButton(onClick = {
-                val uri = Uri.parse("geo:${restaurant.latitude},${restaurant.longitude}?q=${Uri.encode(restaurant.name)}")
-                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-            }) { Icon(Icons.Default.DirectionsCar, contentDescription = "Directions") }
-            Spacer(Modifier.width(8.dp))
+            IconButton(
+                onClick = {
+                    val uri = Uri.parse(
+                        "geo:${restaurant.latitude},${restaurant.longitude}?q=${Uri.encode(restaurant.name)}"
+                    )
+                    context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                },
+                modifier = Modifier.size(56.dp),
+            ) { Icon(Icons.Default.DirectionsCar, contentDescription = "Directions", modifier = Modifier.size(28.dp)) }
         }
 
         Spacer(Modifier.height(8.dp))
 
-        // Michelin Guide deep-link
         Button(
             onClick = {
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(restaurant.michelinUrl)))
@@ -153,36 +217,21 @@ fun RestaurantSheet(
             Text("Open in MICHELIN Guide")
         }
 
-        Spacer(Modifier.height(4.dp))
-
-        OutlinedButton(
-            onClick = {
-                val subject = "Wrong info for ${restaurant.name} on MMMap"
-                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
-                    putExtra(Intent.EXTRA_SUBJECT, subject)
-                }
-                context.startActivity(Intent.createChooser(intent, "Report"))
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Wrong info?")
-        }
-
         Spacer(Modifier.height(24.dp))
     }
 }
 
-private fun Distinction.badgeLabel() = when (this) {
-    Distinction.THREE_STAR -> "★★★  3 Stars"
-    Distinction.TWO_STAR -> "★★  2 Stars"
-    Distinction.ONE_STAR -> "★  1 Star"
+internal fun Distinction.badgeLabel() = when (this) {
+    Distinction.THREE_STAR   -> "★★★  3 Stars"
+    Distinction.TWO_STAR     -> "★★  2 Stars"
+    Distinction.ONE_STAR     -> "★  1 Star"
     Distinction.BIB_GOURMAND -> "Bib Gourmand"
-    Distinction.SELECTED -> "MICHELIN Selected"
+    Distinction.SELECTED     -> "MICHELIN Selected"
 }
 
 @Composable
-private fun Distinction.badgeColor() = when (this) {
+internal fun Distinction.badgeColor() = when (this) {
     Distinction.THREE_STAR, Distinction.TWO_STAR, Distinction.ONE_STAR -> StarGold
     Distinction.BIB_GOURMAND -> BibBrown
-    Distinction.SELECTED -> SelectedGray
+    Distinction.SELECTED     -> SelectedBlue
 }

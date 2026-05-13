@@ -1,18 +1,21 @@
 package app.mmmap.ui.map
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.horizontalScroll
+import androidx.core.content.ContextCompat
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.CircularProgressIndicator
@@ -20,7 +23,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -30,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -49,9 +55,9 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
+import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.PropertyFactory
-import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
@@ -82,21 +88,32 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    val context = LocalContext.current
     val mapHolder = remember { MapHolder() }
 
-    // Animate camera to user's location whenever it changes
     LaunchedEffect(userLatLon) {
-        val loc = userLatLon ?: return@LaunchedEffect
-        mapHolder.map?.animateCamera(
-            CameraUpdateFactory.newLatLngZoom(LatLng(loc.first, loc.second), 14.0)
-        )
+        val map = mapHolder.map ?: return@LaunchedEffect
+        val loc = userLatLon
+        if (loc != null) {
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(loc.first, loc.second), 14.0))
+        }
+        map.style?.getSourceAs<GeoJsonSource>(USER_SOURCE_ID)?.let { src ->
+            if (loc != null)
+                src.setGeoJson(Feature.fromGeometry(Point.fromLngLat(loc.second, loc.first)))
+            else
+                src.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* map works with or without; NearbyScreen handles "no permission" gracefully */ }
+    ) { granted -> if (granted) viewModel.locateUser() }
     LaunchedEffect(Unit) {
-        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        val alreadyGranted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (alreadyGranted) viewModel.locateUser()
+        else permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -135,22 +152,34 @@ fun MapScreen(
                     getMapAsync { libMap ->
                         mapHolder.map = libMap
                         libMap.setStyle(Style.Builder().fromUri(TILE_STYLE_URL)) { style ->
-                            // Restaurant pins (SymbolLayer — icons added in a future step)
-                            style.addSource(GeoJsonSource(SOURCE_ID))
+                            // Restaurant dots — circle colour and size by distinction
+                            val restaurantSource = GeoJsonSource(SOURCE_ID)
+                            style.addSource(restaurantSource)
                             style.addLayer(
-                                SymbolLayer(LAYER_ID, SOURCE_ID).withProperties(
-                                    PropertyFactory.iconImage(
-                                        org.maplibre.android.style.expressions.Expression.match(
-                                            org.maplibre.android.style.expressions.Expression.get(PROP_DISTINCTION),
-                                            org.maplibre.android.style.expressions.Expression.literal("marker_selected"),
-                                            org.maplibre.android.style.expressions.Expression.stop("3 Stars",      "marker_3star"),
-                                            org.maplibre.android.style.expressions.Expression.stop("2 Stars",      "marker_2star"),
-                                            org.maplibre.android.style.expressions.Expression.stop("1 Star",       "marker_1star"),
-                                            org.maplibre.android.style.expressions.Expression.stop("Bib Gourmand", "marker_bib"),
+                                CircleLayer(LAYER_ID, SOURCE_ID).withProperties(
+                                    PropertyFactory.circleColor(
+                                        Expression.match(
+                                            Expression.get(PROP_DISTINCTION),
+                                            Expression.literal("#1565C0"), // default / Selected — blue
+                                            Expression.stop("3 Stars",      "#FFD700"),
+                                            Expression.stop("2 Stars",      "#FFA500"),
+                                            Expression.stop("1 Star",       "#E2231A"),
+                                            Expression.stop("Bib Gourmand", "#00AA66"),
                                         )
                                     ),
-                                    PropertyFactory.iconAllowOverlap(false),
-                                    PropertyFactory.iconSize(0.8f),
+                                    PropertyFactory.circleRadius(
+                                        Expression.match(
+                                            Expression.get(PROP_DISTINCTION),
+                                            Expression.literal(9f),
+                                            Expression.stop("3 Stars",      14f),
+                                            Expression.stop("2 Stars",      13f),
+                                            Expression.stop("1 Star",       12f),
+                                            Expression.stop("Bib Gourmand", 10f),
+                                        )
+                                    ),
+                                    PropertyFactory.circleStrokeWidth(1.5f),
+                                    PropertyFactory.circleStrokeColor("#FFFFFF"),
+                                    PropertyFactory.circleOpacity(0.9f),
                                 )
                             )
 
@@ -165,6 +194,12 @@ fun MapScreen(
                                     PropertyFactory.circleOpacity(1f),
                                 )
                             )
+
+                            // Flush any restaurant data that arrived before the style loaded
+                            mapHolder.pendingRestaurantCollection?.let {
+                                restaurantSource.setGeoJson(it)
+                                mapHolder.pendingRestaurantCollection = null
+                            }
                         }
                         libMap.addOnCameraIdleListener {
                             val region = libMap.projection.visibleRegion
@@ -195,10 +230,6 @@ fun MapScreen(
                 }
             },
             update = { _ ->
-                val style  = mapHolder.map?.style ?: return@AndroidView
-                val source = style.getSourceAs<GeoJsonSource>(SOURCE_ID) ?: return@AndroidView
-
-                // Update restaurant pins
                 val features = restaurants.map { r ->
                     val props = JsonObject().apply {
                         addProperty(PROP_RESTAURANT_ID, r.id)
@@ -206,44 +237,42 @@ fun MapScreen(
                     }
                     Feature.fromGeometry(Point.fromLngLat(r.longitude, r.latitude), props)
                 }
-                source.setGeoJson(FeatureCollection.fromFeatures(features))
-
-                // Update user dot
-                val userSource = style.getSourceAs<GeoJsonSource>(USER_SOURCE_ID)
-                val loc = userLatLon
-                if (userSource != null) {
-                    if (loc != null) {
-                        userSource.setGeoJson(
-                            Feature.fromGeometry(Point.fromLngLat(loc.second, loc.first))
-                        )
-                    } else {
-                        userSource.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
-                    }
+                val collection = FeatureCollection.fromFeatures(features)
+                val source = mapHolder.map?.style?.getSourceAs<GeoJsonSource>(SOURCE_ID)
+                if (source != null) {
+                    source.setGeoJson(collection)
+                } else {
+                    // Style not ready yet — stash for the style-loaded callback to apply
+                    mapHolder.pendingRestaurantCollection = collection
                 }
             },
             modifier = Modifier.fillMaxSize(),
         )
 
-        // Filter chips — padded below the status bar
-        Row(
+        // Filter bar — frosted surface card floating over the map (Google Maps style)
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 8.dp, start = 8.dp, end = 8.dp)
-                .horizontalScroll(rememberScrollState()),
+                .align(Alignment.TopCenter),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            shadowElevation = 4.dp,
         ) {
-            Distinction.entries.forEach { d ->
-                FilterChip(
-                    selected = filters.distinction == d,
-                    onClick = {
-                        viewModel.updateFilters(
-                            filters.copy(distinction = if (filters.distinction == d) null else d)
-                        )
-                    },
-                    label = { Text(d.chipLabel()) },
-                    modifier = Modifier.padding(end = 6.dp),
-                )
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.statusBarsPadding(),
+            ) {
+                items(Distinction.entries) { d ->
+                    FilterChip(
+                        selected = filters.distinction == d,
+                        onClick = {
+                            viewModel.updateFilters(
+                                filters.copy(distinction = if (filters.distinction == d) null else d)
+                            )
+                        },
+                        label = { Text(d.chipLabel()) },
+                    )
+                }
             }
         }
 
@@ -286,6 +315,7 @@ fun MapScreen(
 private class MapHolder {
     var mapView: MapView? = null
     var map: MapLibreMap? = null
+    var pendingRestaurantCollection: FeatureCollection? = null
 }
 
 private fun Distinction.chipLabel() = when (this) {
