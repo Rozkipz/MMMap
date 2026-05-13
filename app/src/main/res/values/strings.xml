@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MMMap</string>
+    <string name="nearby">Near Me</string>
+    <string name="open_michelin_guide">Open in MICHELIN Guide</string>
+    <string name="wrong_info">Wrong info?</string>
+    <string name="loading">Loading…</string>
+    <string name="no_results">No restaurants found</string>
+    <string name="location_permission_rationale">Location access lets you find restaurants near you.</string>
+    <string name="offline_banner">Offline — showing cached data</string>
+    <string name="filter_all">All</string>
+    <string name="filter_three_star">3★</string>
+    <string name="filter_two_star">2★</string>
+    <string name="filter_one_star">1★</string>
+    <string name="filter_bib">Bib Gourmand</string>
+    <string name="filter_selected">Selected</string>
+</resources>

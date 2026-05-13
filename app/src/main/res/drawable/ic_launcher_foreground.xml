@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple star / pin placeholder — replace with real icon later -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 L59,44 L76,44 L63,54 L68,70 L54,60 L40,70 L45,54 L32,44 L49,44 Z" />
+</vector>

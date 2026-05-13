@@ -1,0 +1,11 @@
+MMMap puts every restaurant in the MICHELIN Guide on a single map — from three-star temples of gastronomy to Bib Gourmand hidden gems.
+
+Features:
+• Browse all MICHELIN Guide restaurants on a fast, offline-first map
+• Filter by distinction (★★★ / ★★ / ★ / Bib Gourmand / Selected)
+• Filter by cuisine and price range
+• Tap any pin for details: photos, opening hours, phone, website
+• Near Me — instantly see top restaurants sorted by your distance
+• Direct deep-link to each restaurant's official MICHELIN Guide page
+
+Privacy: no tracking, no analytics, no account required.
