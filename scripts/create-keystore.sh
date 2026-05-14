@@ -21,7 +21,7 @@ keytool -genkeypair \
     -keysize 4096 \
     -validity 10000 \
     -alias mmmap \
-    -dname "CN=MMMap, O=RazorSecure, C=GB"
+    -dname "CN=MMMap, O=MMMap, C=GB"
 
 echo
 echo "Enter keystore password (same as above):"
