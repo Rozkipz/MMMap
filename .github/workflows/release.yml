@@ -82,7 +82,7 @@ jobs:
         uses: extractions/setup-just@v2
 
       - name: Download APK
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: mmmap-${{ inputs.version }}.apk
           path: app/build/outputs/apk/release
