@@ -1,13 +1,19 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.2.3)'
+        required: true
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +31,15 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
 
+      - name: Compute version code
+        id: ver
+        run: |
+          VERSION="${{ inputs.version }}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          echo "code=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))" >> $GITHUB_OUTPUT
+
       - name: Write keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -40,21 +55,14 @@ jobs:
           echo "fsq.api.key=$FSQ_API_KEY" >> local.properties
 
       - name: Assemble release APK
-        run: ./gradlew assembleRelease
-
-      - name: Get changelog
-        id: changelog
         run: |
-          VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | grep -oP '\d+')
-          NOTES_FILE="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
-          if [[ -f "$NOTES_FILE" ]]; then
-            echo "notes=$(cat $NOTES_FILE)" >> $GITHUB_OUTPUT
-          else
-            echo "notes=Release ${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-          fi
+          ./gradlew assembleRelease \
+            -PversionCode=${{ steps.ver.outputs.code }} \
+            -PversionName=${{ inputs.version }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
           files: app/build/outputs/apk/release/app-release.apk
-          body: ${{ steps.changelog.outputs.notes }}
