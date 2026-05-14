@@ -13,12 +13,14 @@ import app.mmmap.ui.map.DebugState
 import app.mmmap.ui.map.MapBounds
 import app.mmmap.ui.map.MapFilters
 import app.mmmap.ui.map.MapViewModel
+import androidx.work.WorkManager
+import app.mmmap.data.sync.DatasetSyncWorker
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import io.mockk.coJustRun
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -46,17 +48,21 @@ class MapViewModelTest {
     private val apiKeyPrefs: ApiKeyPreferences = mockk(relaxed = true)
     private val syncPrefs: SyncPreferences = mockk(relaxed = true)
     private val tileCacheManager: TileCacheManager = mockk(relaxed = true)
+    private val workManager: WorkManager = mockk(relaxed = true)
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { context.getSystemService(Context.LOCATION_SERVICE) } returns mockk<LocationManager>(relaxed = true)
+        // WorkManager.getInstance calls context.getApplicationContext() during mockk recording;
+        // the relaxed mock doesn't implement this abstract method, so we stub it explicitly.
+        every { context.applicationContext } returns context
         coEvery { repo.distinctCuisines() } returns listOf("French", "Japanese")
         coEvery { repo.distinctPrices() } returns listOf("£", "££", "£££")
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
         every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
         every { tileCacheManager.maxSizeMb } returns flowOf(MapCachePreferences.DEFAULT_CACHE_MB)
-        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager)
+        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager)
     }
 
     @After fun tearDown() {
@@ -228,7 +234,7 @@ class MapViewModelTest {
 
     @Test fun cacheSizeMb_emitsFromTileCacheManager() = runTest {
         every { tileCacheManager.maxSizeMb } returns flowOf(500L)
-        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager)
+        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager)
         val values = mutableListOf<Long>()
         val job = freshVm.cacheSizeMb.onEach { values.add(it) }.launchIn(this)
         advanceUntilIdle()
@@ -248,6 +254,56 @@ class MapViewModelTest {
         vm.clearTileCache()
         advanceUntilIdle()
         coVerify { tileCacheManager.clearAmbientCache() }
+    }
+
+    // ── forceRefresh ──────────────────────────────────────────────────────────
+
+    @Test fun forceRefresh_clearsShaAndEnqueuesWork() = runTest {
+        coJustRun { syncPrefs.clearSha() }
+
+        vm.forceRefresh()
+        advanceUntilIdle()
+
+        coVerify { syncPrefs.clearSha() }
+        verify { workManager.enqueueUniquePeriodicWork(DatasetSyncWorker.TAG, any(), any()) }
+    }
+
+    // ── loadDebugInfo ─────────────────────────────────────────────────────────
+
+    @Test fun loadDebugInfo_populatesDebugState() = runTest {
+        val future = mockk<com.google.common.util.concurrent.ListenableFuture<List<androidx.work.WorkInfo>>>(relaxed = true)
+        every { workManager.getWorkInfosForUniqueWork(any()) } returns future
+        every { future.get() } returns emptyList()
+        coEvery { repo.count() } returns 99
+        coEvery { syncPrefs.lastSyncAt() } returns 1_000L
+        coEvery { syncPrefs.lastCsvSha() } returns "abcdef1234567890"
+
+        vm.loadDebugInfo()
+        advanceUntilIdle()
+
+        val state = vm.debugState.value
+        assertEquals(99, state?.dbRestaurantCount)
+        assertEquals(1_000L, state?.lastSyncAt)
+        assertEquals("abcdef12", state?.lastCsvSha)
+        assertEquals("none", state?.workerState)
+    }
+
+    @Test fun loadDebugInfo_workerStateFromWorkInfo() = runTest {
+        val future = mockk<com.google.common.util.concurrent.ListenableFuture<List<androidx.work.WorkInfo>>>(relaxed = true)
+        val workInfo = mockk<androidx.work.WorkInfo>(relaxed = true)
+        every { workInfo.state } returns androidx.work.WorkInfo.State.RUNNING
+        every { workInfo.nextScheduleTimeMillis } returns Long.MAX_VALUE
+        every { workManager.getWorkInfosForUniqueWork(any()) } returns future
+        every { future.get() } returns listOf(workInfo)
+        coEvery { repo.count() } returns 0
+        coEvery { syncPrefs.lastSyncAt() } returns null
+        coEvery { syncPrefs.lastCsvSha() } returns null
+
+        vm.loadDebugInfo()
+        advanceUntilIdle()
+
+        assertEquals("RUNNING", vm.debugState.value?.workerState)
+        assertNull(vm.debugState.value?.nextSyncAt)
     }
 
     private fun restaurant(id: String, name: String) = Restaurant(
