@@ -1,0 +1,114 @@
+name: Coverage
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  coverage:
+    name: Coverage check
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Run coverage
+        run: just coverage
+
+      # Strip Compose UI screens/sheets/dialogs, Hilt/Dagger generated code,
+      # Room DAOs and DataStore prefs from the report — these require on-device
+      # instrumented tests and should not count against the unit-test gate.
+      - name: Filter JaCoCo report
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as ET, re
+
+          EXCLUDE_PACKAGES = [
+              'app/mmmap/di',
+              'app/mmmap/data/db/dao',
+              'app/mmmap/data/db',
+              'app/mmmap/data/prefs',
+              'hilt_aggregated_deps',
+              'dagger/hilt',
+          ]
+          EXCLUDE_FILES = re.compile(
+              r'(.*Screen|.*Sheet|.*Dialog|Color|Theme|MainActivity|MMMapApplication|Navigation)\.kt$'
+          )
+          EXCLUDE_CLASSES = re.compile(
+              r'.*(Dagger|Hilt_|_HiltModules|_Factory|_MembersInjector|ComposableSingletons'
+              r'|_HiltComponents|_GeneratedInjector|_ComponentTreeDeps'
+              r'|ScreenKt\$|SheetKt\$|DialogKt\$).*'
+          )
+
+          tree = ET.parse('app/build/reports/coverage/test/debug/report.xml')
+          root = tree.getroot()
+
+          for pkg in list(root.findall('package')):
+              if any(pkg.get('name','').startswith(ex) for ex in EXCLUDE_PACKAGES):
+                  root.remove(pkg); continue
+              for cls in list(pkg.findall('class')):
+                  src = cls.get('sourcefilename', '')
+                  name = cls.get('name', '')
+                  if EXCLUDE_FILES.match(src) or EXCLUDE_CLASSES.match(name):
+                      pkg.remove(cls)
+              for sf in list(pkg.findall('sourcefile')):
+                  if EXCLUDE_FILES.match(sf.get('name', '')):
+                      pkg.remove(sf)
+
+          # Recompute top-level counters from surviving class data
+          TYPES = ['INSTRUCTION','BRANCH','LINE','COMPLEXITY','METHOD','CLASS']
+          totals = {t: [0,0] for t in TYPES}
+          for pkg in root.findall('package'):
+              for cls in pkg.findall('class'):
+                  for c in cls.findall('counter'):
+                      t = c.get('type')
+                      if t in totals:
+                          totals[t][0] += int(c.get('missed',0))
+                          totals[t][1] += int(c.get('covered',0))
+
+          for c in list(root.findall('counter')): root.remove(c)
+          for t in TYPES:
+              el = ET.SubElement(root, 'counter')
+              el.set('type', t); el.set('missed', str(totals[t][0])); el.set('covered', str(totals[t][1]))
+
+          tree.write('app/build/reports/coverage/test/debug/report-filtered.xml',
+                     encoding='unicode', xml_declaration=True)
+
+          instr = totals['INSTRUCTION']
+          total = instr[0] + instr[1]
+          pct = round(100 * instr[1] / total) if total else 0
+          print(f'Filtered instruction coverage: {pct}% ({instr[1]}/{total})')
+          EOF
+
+      - name: Report coverage on PR
+        uses: madrapps/jacoco-report@v1.7.1
+        with:
+          paths: app/build/reports/coverage/test/debug/report-filtered.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-changed-files: 75
+          title: '## Coverage'
+          update-comment: true
+          pass-emoji: ':green_circle:'
+          fail-emoji: ':red_circle:'

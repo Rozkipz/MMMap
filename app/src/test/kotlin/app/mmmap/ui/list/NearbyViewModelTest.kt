@@ -130,6 +130,17 @@ class NearbyViewModelTest {
         assertEquals(50, vm.nearby.value.size)
     }
 
+    @Test fun coarseOnlyPermission_proceeds() = runTest {
+        every { ContextCompat.checkSelfPermission(any(), android.Manifest.permission.ACCESS_FINE_LOCATION) } returns PackageManager.PERMISSION_DENIED
+        every { ContextCompat.checkSelfPermission(any(), android.Manifest.permission.ACCESS_COARSE_LOCATION) } returns PackageManager.PERMISSION_GRANTED
+        every { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) } returns fakeLocation(51.5, -0.1)
+
+        vm.load()
+        advanceUntilIdle()
+
+        assertFalse(vm.locationMissing.value)
+    }
+
     @Test fun distanceInPairIsNonNegative() = runTest {
         every { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) } returns fakeLocation(51.5, -0.1)
         val restaurants = listOf(restaurant("r1", 51.51, -0.11))
