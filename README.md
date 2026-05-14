@@ -3,7 +3,7 @@
 <img src="docs/banner.svg" alt="MMMap" width="860">
 
 [![CI](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Browse every restaurant in the MICHELIN Guide — offline, on an interactive map.**
 
@@ -125,7 +125,7 @@ All dependencies are either Apache 2.0, MIT, or LGPL-licensed — fully F-Droid-
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0** — see [`LICENSE`](LICENSE) for details.
+This project is licensed under the **MIT License** — see [`LICENSE`](LICENSE) for details.
 
 ## Attribution
 

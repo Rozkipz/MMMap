@@ -1,4 +1,5 @@
 /local.properties
+/local.properties.bak
 .DS_Store
 *.orig
 keystore.properties
