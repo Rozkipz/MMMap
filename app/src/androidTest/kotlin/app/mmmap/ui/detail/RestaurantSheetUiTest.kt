@@ -1,12 +1,17 @@
 package app.mmmap.ui.detail
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mmmap.domain.model.Distinction
@@ -169,6 +174,56 @@ class RestaurantSheetUiTest {
         }
         // CircularProgressIndicator has no text, but its parent exists — just verify no crash
         compose.onNodeWithText("Test Restaurant").assertIsDisplayed()
+    }
+
+    // --- "I've been here" toggle ---
+
+    @Test fun beenHereCheckbox_displayed() {
+        compose.setContent {
+            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = null, loading = false)
+        }
+        compose.onNodeWithText("I've been here").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun beenHereCheckbox_uncheckedWhenNotVisited() {
+        compose.setContent {
+            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = null, loading = false, isVisited = false)
+        }
+        // The Checkbox node itself is the toggleable element
+        compose.onNodeWithText("I've been here").performScrollTo()
+        compose.onNode(isToggleable()).assertIsOff()
+    }
+
+    @Test fun beenHereCheckbox_checkedWhenVisited() {
+        compose.setContent {
+            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = null, loading = false, isVisited = true)
+        }
+        compose.onNodeWithText("I've been here").performScrollTo()
+        compose.onNode(isToggleable()).assertIsOn()
+    }
+
+    @Test fun beenHereCheckbox_clickFiresCallback() {
+        var callbackValue: Boolean? = null
+        compose.setContent {
+            RestaurantSheetContent(
+                restaurant(), onDismiss = {}, enrichment = null, loading = false,
+                isVisited = false, onVisitedChange = { callbackValue = it },
+            )
+        }
+        compose.onNodeWithText("I've been here").performScrollTo().performClick()
+        assertEquals(true, callbackValue)
+    }
+
+    @Test fun beenHereCheckbox_clickWhenVisited_firesWithFalse() {
+        var callbackValue: Boolean? = null
+        compose.setContent {
+            RestaurantSheetContent(
+                restaurant(), onDismiss = {}, enrichment = null, loading = false,
+                isVisited = true, onVisitedChange = { callbackValue = it },
+            )
+        }
+        compose.onNodeWithText("I've been here").performScrollTo().performClick()
+        assertEquals(false, callbackValue)
     }
 
     @Test fun openNowLabel_shownFromEnrichment() {
