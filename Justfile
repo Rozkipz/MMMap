@@ -32,6 +32,10 @@ clean:
 test:
     {{gradle}} testDebugUnitTest
 
+# Run unit tests with JaCoCo coverage  →  app/build/reports/coverage/test/debug/index.html
+coverage:
+    {{gradle}} testDebugUnitTest createDebugUnitTestCoverageReport
+
 # Run instrumented tests on a connected device or emulator
 test-instrumented:
     {{gradle}} connectedDebugAndroidTest

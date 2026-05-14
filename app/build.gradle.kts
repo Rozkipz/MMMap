@@ -73,6 +73,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             isDebuggable = true
+            enableUnitTestCoverage = true
         }
     }
 
