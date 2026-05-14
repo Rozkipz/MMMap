@@ -218,4 +218,104 @@ class EnrichmentRepositoryTest {
         assertNull(detail)
         coVerify(exactly = 0) { api.getPlace(any(), any()) }
     }
+
+    // ── Jaro-Winkler best-name ranking ────────────────────────────────────────
+
+    @Test fun multipleResults_closestNameMatchChosen() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns null
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(
+                FsqSearchResult(fsqId = "fsq_wrong", name = "Completely Different Place", distance = 50),
+                FsqSearchResult(fsqId = "fsq_right", name = "Le Gavroche",               distance = 80),
+            )
+        )
+        coEvery { api.getPlace(any(), any()) } returns FsqPlaceResponse(fsqId = "fsq_right", rating = 9.0)
+
+        repo.get("r1", "Le Gavroche", 51.5, -0.1)
+
+        coVerify { api.getPlace(any(), "fsq_right") }
+        coVerify(exactly = 0) { api.getPlace(any(), "fsq_wrong") }
+    }
+
+    @Test fun multipleResults_beyondRadiusExcludedBeforeRanking() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns null
+        // Perfect name match but too far; imperfect name match within range
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(
+                FsqSearchResult(fsqId = "fsq_far",  name = "Le Gavroche", distance = 201),
+                FsqSearchResult(fsqId = "fsq_near", name = "Le Gavroch",  distance = 30),
+            )
+        )
+        coEvery { api.getPlace(any(), any()) } returns FsqPlaceResponse(fsqId = "fsq_near")
+
+        repo.get("r1", "Le Gavroche", 51.5, -0.1)
+
+        coVerify { api.getPlace(any(), "fsq_near") }
+        coVerify(exactly = 0) { api.getPlace(any(), "fsq_far") }
+    }
+
+    // ── BuildConfig / no API key ──────────────────────────────────────────────
+
+    @Test fun nullStoredApiKey_buildConfigKeyUsedAsFallback() = runTest {
+        // Only runs when local.properties supplies FSQ_API_KEY (i.e. not in CI).
+        // BuildConfig.FSQ_API_KEY is blank when local.properties is absent, so the repo
+        // short-circuits before the API call — there is nothing to verify in that case.
+        org.junit.Assume.assumeTrue(
+            "Skipped: BuildConfig.FSQ_API_KEY not set (no local.properties)",
+            app.mmmap.BuildConfig.FSQ_API_KEY.isNotBlank(),
+        )
+        every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
+        coEvery { cacheDao.get("r1") } returns null
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(results = emptyList())
+
+        repo.get("r1", "Test", 51.5, -0.1)
+
+        coVerify { api.searchPlaces(any(), any(), any()) }
+    }
+
+    @Test fun storedApiKeyTakesPriorityOverBuildConfig() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("user-key")
+        coEvery { cacheDao.get("r1") } returns null
+        coEvery { api.searchPlaces("user-key", any(), any()) } returns FsqSearchResponse(results = emptyList())
+
+        repo.get("r1", "Test", 51.5, -0.1)
+
+        coVerify { api.searchPlaces("user-key", any(), any()) }
+    }
+
+    // ── photo URL construction ────────────────────────────────────────────────
+
+    @Test fun photoUrl_formattedAs800x800() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns null
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(FsqSearchResult(fsqId = "fsq1", name = "Test", distance = 10))
+        )
+        coEvery { api.getPlace(any(), any()) } returns FsqPlaceResponse(
+            fsqId = "fsq1",
+            photos = listOf(FsqPhoto(prefix = "https://cdn.example.com/", suffix = "/original.jpg")),
+        )
+
+        val detail = repo.get("r1", "Test", 51.5, -0.1)
+
+        assertEquals("https://cdn.example.com/800x800/original.jpg", detail?.photoUrl)
+    }
+
+    @Test fun noPhotos_photoUrlIsNull() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns null
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(FsqSearchResult(fsqId = "fsq1", name = "Test", distance = 10))
+        )
+        coEvery { api.getPlace(any(), any()) } returns FsqPlaceResponse(
+            fsqId = "fsq1",
+            photos = emptyList(),
+        )
+
+        val detail = repo.get("r1", "Test", 51.5, -0.1)
+
+        assertNull(detail?.photoUrl)
+    }
 }
