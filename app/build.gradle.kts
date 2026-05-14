@@ -43,7 +43,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "FSQ_API_KEY", "\"${localProps["fsq.api.key"] ?: ""}\"")
+        buildConfigField("String", "FSQ_API_KEY", "\"\"")
     }
 
     signingConfigs {
@@ -73,6 +73,7 @@ android {
             applicationIdSuffix = ".debug"
             isDebuggable = true
             enableUnitTestCoverage = true
+            buildConfigField("String", "FSQ_API_KEY", "\"${localProps["fsq.api.key"] ?: ""}\"")
         }
     }
 
