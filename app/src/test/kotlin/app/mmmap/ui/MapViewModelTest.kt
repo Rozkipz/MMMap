@@ -18,6 +18,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.coJustRun
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -221,6 +222,32 @@ class MapViewModelTest {
         advanceUntilIdle()
         assertTrue(keys.isNotEmpty())
         job.cancel()
+    }
+
+    // ── tile cache ────────────────────────────────────────────────────────────
+
+    @Test fun cacheSizeMb_emitsFromTileCacheManager() = runTest {
+        every { tileCacheManager.maxSizeMb } returns flowOf(500L)
+        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager)
+        val values = mutableListOf<Long>()
+        val job = freshVm.cacheSizeMb.onEach { values.add(it) }.launchIn(this)
+        advanceUntilIdle()
+        assertTrue("expected 500 emission, got $values", values.any { it == 500L })
+        job.cancel()
+    }
+
+    @Test fun setCacheSizeMb_delegatesToTileCacheManager() = runTest {
+        coJustRun { tileCacheManager.setMaxSizeMb(any()) }
+        vm.setCacheSizeMb(500L)
+        advanceUntilIdle()
+        coVerify { tileCacheManager.setMaxSizeMb(500L) }
+    }
+
+    @Test fun clearTileCache_delegatesToTileCacheManager() = runTest {
+        coJustRun { tileCacheManager.clearAmbientCache() }
+        vm.clearTileCache()
+        advanceUntilIdle()
+        coVerify { tileCacheManager.clearAmbientCache() }
     }
 
     private fun restaurant(id: String, name: String) = Restaurant(
