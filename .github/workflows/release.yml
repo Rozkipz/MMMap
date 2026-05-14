@@ -46,10 +46,15 @@ jobs:
       - name: Write keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > mmmap-release.jks
-          echo "$KEYSTORE_PROPERTIES" > keystore.properties
+          cat > keystore.properties <<EOF
+          storeFile=mmmap-release.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=mmmap
+          keyPassword=$KEYSTORE_PASSWORD
+          EOF
 
       - name: Write API keys
         env:
