@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="200" viewBox="0 0 900 200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="200" fill="url(#bg)" rx="12"/>
+
+  <!-- Decorative map-pin dots -->
+  <circle cx="60"  cy="100" r="4" fill="#e63946" opacity="0.6"/>
+  <circle cx="100" cy="70"  r="3" fill="#e63946" opacity="0.4"/>
+  <circle cx="130" cy="120" r="5" fill="#e63946" opacity="0.5"/>
+  <circle cx="80"  cy="145" r="3" fill="#e63946" opacity="0.3"/>
+  <circle cx="840" cy="60"  r="4" fill="#e63946" opacity="0.4"/>
+  <circle cx="810" cy="130" r="3" fill="#e63946" opacity="0.5"/>
+  <circle cx="860" cy="140" r="5" fill="#e63946" opacity="0.3"/>
+
+  <!-- Star decorations (simple 5-point stars) -->
+  <text x="47" y="45"  font-size="18" fill="#f4d03f" opacity="0.8" font-family="serif">★</text>
+  <text x="820" y="55" font-size="14" fill="#f4d03f" opacity="0.6" font-family="serif">★</text>
+  <text x="845" y="165" font-size="10" fill="#f4d03f" opacity="0.5" font-family="serif">★</text>
+
+  <!-- App name -->
+  <text x="450" y="105"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        font-size="72"
+        font-weight="700"
+        fill="#ffffff"
+        text-anchor="middle"
+        letter-spacing="-2">MMMap</text>
+
+  <!-- Tagline -->
+  <text x="450" y="148"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        font-size="18"
+        font-weight="400"
+        fill="#a8b2c8"
+        text-anchor="middle"
+        letter-spacing="1">MICHELIN Guide on an interactive offline map</text>
+</svg>
