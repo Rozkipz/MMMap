@@ -1,6 +1,6 @@
 [versions]
 agp = "8.8.2"
-kotlin = "2.0.21"
+kotlin = "2.3.21"
 ksp = "2.0.21-1.0.28"
 composeBom = "2026.05.00"
 activityCompose = "1.10.1"
@@ -11,11 +11,11 @@ room = "2.7.0"
 datastore = "1.2.1"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
-kotlinxSerialization = "1.7.3"
+kotlinxSerialization = "1.11.0"
 coil = "3.0.4"
 workManager = "2.10.0"
 maplibre = "11.13.5"
-coroutines = "1.9.0"
+coroutines = "1.11.0"
 
 [libraries]
 # Compose
