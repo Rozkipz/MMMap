@@ -54,7 +54,7 @@ jobs:
               'dagger/hilt',
           ]
           EXCLUDE_FILES = re.compile(
-              r'(.*Screen|.*Sheet|.*Dialog|Color|Theme|MainActivity|MMMapApplication|Navigation)\.kt$'
+              r'(.*Screen|.*Sheet|.*Dialog|Color|Theme|MainActivity|MmmapApplication|Navigation)\.kt$'
           )
           EXCLUDE_CLASSES = re.compile(
               r'.*(Dagger|Hilt_|_HiltModules|_Factory|_MembersInjector|ComposableSingletons'

@@ -74,7 +74,7 @@ ui/
   theme/Theme.kt
   theme/Type.kt
   theme/Color.kt
-MMMapApplication.kt
+MmmapApplication.kt
 MainActivity.kt
 Navigation.kt
 di/DatabaseModule.kt

@@ -12,7 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import app.mmmap.ui.theme.MMMapTheme
+import app.mmmap.ui.theme.MmmapTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 enum class ThemeMode { LIGHT, DARK, AUTO }
@@ -38,8 +38,8 @@ class MainActivity : ComponentActivity() {
                     controller.isAppearanceLightNavigationBars = !darkTheme
                 }
             }
-            MMMapTheme(darkTheme = darkTheme) {
-                MMMapNavGraph(
+            MmmapTheme(darkTheme = darkTheme) {
+                MmmapNavGraph(
                     themeMode = themeMode,
                     onCycleTheme = {
                         themeMode = when (themeMode) {

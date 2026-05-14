@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MMMap</string>
+    <string name="app_name">Mmmap</string>
     <string name="nearby">Near Me</string>
     <string name="open_michelin_guide">Open in MICHELIN Guide</string>
     <string name="wrong_info">Wrong info?</string>

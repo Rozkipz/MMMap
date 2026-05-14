@@ -27,7 +27,7 @@ sealed class Screen(val route: String, val label: String) {
 private val bottomNavItems = listOf(Screen.Map, Screen.Nearby)
 
 @Composable
-fun MMMapNavGraph(
+fun MmmapNavGraph(
     themeMode: ThemeMode,
     onCycleTheme: () -> Unit,
     isDarkTheme: Boolean,

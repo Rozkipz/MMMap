@@ -26,7 +26,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("MMMap") },
+        title = { Text("Mmmap") },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -75,8 +75,8 @@ fun AboutDialog(onDismiss: () -> Unit) {
 
                 Text("Source code", style = MaterialTheme.typography.titleSmall)
                 Link(
-                    text = "github.com/Rozkipz/MMMap",
-                    url = "https://github.com/Rozkipz/MMMap",
+                    text = "github.com/Rozkipz/Mmmap",
+                    url = "https://github.com/Rozkipz/Mmmap",
                     onOpen = ::open,
                 )
 

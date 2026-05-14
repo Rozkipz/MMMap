@@ -7,13 +7,13 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-        android:name=".MMMapApplication"
+        android:name=".MmmapApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MMMap">
+        android:theme="@style/Theme.Mmmap">
 
         <activity
             android:name=".MainActivity"

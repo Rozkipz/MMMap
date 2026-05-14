@@ -1,4 +1,4 @@
-# MMMap — Claude Code notes
+# Mmmap — Claude Code notes
 
 ## What this app is
 
