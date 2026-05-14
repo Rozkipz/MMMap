@@ -8,6 +8,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import androidx.work.WorkManager
 import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.prefs.MapCachePreferences
 import app.mmmap.data.repository.RestaurantRepository
@@ -50,6 +51,7 @@ class MapViewModelLocateTest {
     private val apiKeyPrefs = mockk<ApiKeyPreferences>(relaxed = true)
     private val syncPrefs = mockk<SyncPreferences>(relaxed = true)
     private val tileCacheManager = mockk<TileCacheManager>(relaxed = true)
+    private val workManager = mockk<WorkManager>(relaxed = true)
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
@@ -66,7 +68,7 @@ class MapViewModelLocateTest {
         every { Looper.getMainLooper() } returns mockk(relaxed = true)
         every { locationManager.isProviderEnabled(any()) } returns true
         every { locationManager.getLastKnownLocation(any()) } returns null
-        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager)
+        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager)
     }
 
     @After fun tearDown() {
