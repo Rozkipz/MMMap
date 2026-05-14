@@ -2,8 +2,7 @@
 
 <img src="docs/banner.svg" alt="MMMap" width="860">
 
-[![CI](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml/badge.svg)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Rozkipz/MMMap/badges/coverage.json)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
+[![CI](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
 **Browse every restaurant in the MICHELIN Guide — offline, on an interactive map.**
