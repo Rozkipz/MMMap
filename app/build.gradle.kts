@@ -1,11 +1,13 @@
 import java.util.Properties
 
 fun gitVersionName(): String {
-    fun exec(vararg cmd: String) = providers.exec { commandLine(*cmd) }
-        .standardOutput.asText.get().trim()
+    fun exec(vararg cmd: String) = providers.exec {
+        commandLine(*cmd)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim()
     return try {
-        val tag = exec("git", "describe", "--tags", "--abbrev=0")
-        val sha = exec("git", "rev-parse", "--short", "HEAD")
+        val tag = exec("git", "describe", "--tags", "--abbrev=0").ifBlank { return "dev" }
+        val sha = exec("git", "rev-parse", "--short", "HEAD").ifBlank { return "dev" }
         "$tag-$sha"
     } catch (_: Exception) { "dev" }
 }
