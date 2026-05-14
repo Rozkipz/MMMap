@@ -1,12 +1,20 @@
 package app.mmmap.data.db.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import app.mmmap.data.db.entities.RestaurantEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RestaurantDao {
+
+    @Query("DELETE FROM restaurant")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(restaurants: List<RestaurantEntity>)
 
     @Query("""
         SELECT * FROM restaurant

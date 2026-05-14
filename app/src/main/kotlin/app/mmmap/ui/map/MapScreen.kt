@@ -64,11 +64,11 @@ import com.google.gson.JsonObject
 import app.mmmap.domain.model.Distinction
 import app.mmmap.ui.detail.RestaurantSheet
 import app.mmmap.ui.theme.BibGreen
-import app.mmmap.ui.theme.MichelinRed
 import app.mmmap.ui.theme.OneStarRed
 import app.mmmap.ui.theme.SelectedBlue
 import app.mmmap.ui.theme.StarGold
-import app.mmmap.ui.theme.TwoStarGold
+import app.mmmap.ui.theme.TwoStarViolet
+import app.mmmap.ui.theme.UserGrey
 import kotlinx.coroutines.launch
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
@@ -87,8 +87,9 @@ import org.maplibre.geojson.Point
 
 private const val SOURCE_ID      = "restaurants-source"
 private const val LAYER_ID       = "restaurants-layer"
-private const val USER_SOURCE_ID = "user-location-source"
-private const val USER_LAYER_ID  = "user-location-layer"
+private const val USER_SOURCE_ID  = "user-location-source"
+private const val USER_GLOW_ID    = "user-location-glow"
+private const val USER_LAYER_ID   = "user-location-layer"
 private const val PROP_RESTAURANT_ID = "id"
 private const val PROP_DISTINCTION   = "distinction"
 
@@ -119,7 +120,7 @@ private fun addCustomLayers(style: Style, mapHolder: MapHolder) {
                     Expression.get(PROP_DISTINCTION),
                     Expression.literal(SelectedBlue.toCssHex()),
                     Expression.stop("3 Stars",      StarGold.toCssHex()),
-                    Expression.stop("2 Stars",      TwoStarGold.toCssHex()),
+                    Expression.stop("2 Stars",      TwoStarViolet.toCssHex()),
                     Expression.stop("1 Star",       OneStarRed.toCssHex()),
                     Expression.stop("Bib Gourmand", BibGreen.toCssHex()),
                 )
@@ -141,10 +142,20 @@ private fun addCustomLayers(style: Style, mapHolder: MapHolder) {
     )
     val userSource = GeoJsonSource(USER_SOURCE_ID)
     style.addSource(userSource)
+    // Soft glow halo — blurred large circle behind the crisp dot
+    style.addLayer(
+        CircleLayer(USER_GLOW_ID, USER_SOURCE_ID).withProperties(
+            PropertyFactory.circleRadius(22f),
+            PropertyFactory.circleColor(UserGrey.toCssHex()),
+            PropertyFactory.circleBlur(1f),
+            PropertyFactory.circleOpacity(0.4f),
+        )
+    )
+    // Crisp inner dot
     style.addLayer(
         CircleLayer(USER_LAYER_ID, USER_SOURCE_ID).withProperties(
             PropertyFactory.circleRadius(8f),
-            PropertyFactory.circleColor(MichelinRed.toCssHex()),
+            PropertyFactory.circleColor(UserGrey.toCssHex()),
             PropertyFactory.circleStrokeWidth(2.5f),
             PropertyFactory.circleStrokeColor("#FFFFFF"),
             PropertyFactory.circleOpacity(1f),
@@ -471,7 +482,7 @@ private fun Distinction.chipLabel() = when (this) {
 
 private fun Distinction.dotColor() = when (this) {
     Distinction.THREE_STAR   -> StarGold
-    Distinction.TWO_STAR     -> TwoStarGold
+    Distinction.TWO_STAR     -> TwoStarViolet
     Distinction.ONE_STAR     -> OneStarRed
     Distinction.BIB_GOURMAND -> BibGreen
     Distinction.SELECTED     -> SelectedBlue

@@ -1,7 +1,7 @@
 package app.mmmap.di
 
 import app.mmmap.data.remote.FoursquareApi
-import app.mmmap.data.remote.GitHubReleasesApi
+import app.mmmap.data.remote.GitHubContentsApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,7 +47,7 @@ object NetworkModule {
     @Named("github")
     fun provideGitHubRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit =
         Retrofit.Builder()
-            .baseUrl(GitHubReleasesApi.BASE_URL)
+            .baseUrl(GitHubContentsApi.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
@@ -59,6 +59,6 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideGitHubReleasesApi(@Named("github") retrofit: Retrofit): GitHubReleasesApi =
-        retrofit.create(GitHubReleasesApi::class.java)
+    fun provideGitHubContentsApi(@Named("github") retrofit: Retrofit): GitHubContentsApi =
+        retrofit.create(GitHubContentsApi::class.java)
 }

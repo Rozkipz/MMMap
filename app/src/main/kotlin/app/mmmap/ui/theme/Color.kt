@@ -5,12 +5,13 @@ import androidx.compose.ui.graphics.Color
 // Brand / distinction colours — used by the map layer and badge labels
 val MichelinRed  = Color(0xFFE2001A)
 val StarGold     = Color(0xFFFFB400)
-val TwoStarGold  = Color(0xFFFFA500)
+val TwoStarViolet = Color(0xFF7B1FA2)
 val OneStarRed   = Color(0xFFE2231A)
 val BibGreen     = Color(0xFF00AA66)
 val BibBrown     = Color(0xFF8B4513)
 val SelectedBlue = Color(0xFF1565C0)
 val GreenStar    = Color(0xFF2E7D32)
+val UserGrey     = Color(0xFF9E9E9E)
 
 // ── Light colour scheme (brand-tuned, generated from MichelinRed as seed) ─────
 val md_light_primary             = MichelinRed

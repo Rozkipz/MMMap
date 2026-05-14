@@ -13,12 +13,12 @@ import javax.inject.Singleton
 class SyncPreferences @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) {
-    private val keyTag = stringPreferencesKey("last_release_tag")
+    private val keySha    = stringPreferencesKey("last_csv_sha")
     private val keySyncAt = longPreferencesKey("last_sync_at")
 
-    suspend fun lastReleaseTag(): String? = dataStore.data.first()[keyTag]
+    suspend fun lastCsvSha(): String? = dataStore.data.first()[keySha]
 
-    suspend fun setLastReleaseTag(tag: String) {
-        dataStore.edit { it[keyTag] = tag; it[keySyncAt] = System.currentTimeMillis() }
+    suspend fun setLastCsvSha(sha: String) {
+        dataStore.edit { it[keySha] = sha; it[keySyncAt] = System.currentTimeMillis() }
     }
 }
