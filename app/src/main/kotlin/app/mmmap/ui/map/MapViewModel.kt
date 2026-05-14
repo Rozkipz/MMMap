@@ -93,6 +93,17 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    // lat, lon, zoom — persists across tab switches so the map can restore its position
+    var lastCameraPosition: Triple<Double, Double, Double>? = null
+        private set
+
+    // True after the first automatic zoom to GPS; prevents re-zooming on tab switch
+    var hasZoomedToUserOnce = false
+
+    fun saveLastCamera(lat: Double, lon: Double, zoom: Double) {
+        lastCameraPosition = Triple(lat, lon, zoom)
+    }
+
     fun selectRestaurant(restaurant: Restaurant?) { selectedRestaurant.value = restaurant }
     fun updateBounds(b: MapBounds) { bounds.value = b }
     fun updateFilters(f: MapFilters) { filters.value = f }

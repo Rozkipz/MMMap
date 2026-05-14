@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.mmmap.domain.model.Distinction
@@ -118,8 +119,17 @@ internal fun RestaurantSheetContent(
 
         Text(restaurant.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
 
-        restaurant.cuisine?.let {
-            Text("$it${restaurant.price?.let { p -> "  ·  $p" } ?: ""}", style = MaterialTheme.typography.bodyMedium)
+        restaurant.cuisine?.let { cuisine ->
+            Row {
+                Text(
+                    cuisine,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textDecoration = TextDecoration.Underline,
+                )
+                restaurant.price?.let { price ->
+                    Text("  ·  $price", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
         }
 
         Spacer(Modifier.height(8.dp))

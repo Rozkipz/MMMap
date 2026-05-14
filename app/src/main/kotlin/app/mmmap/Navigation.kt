@@ -27,7 +27,11 @@ sealed class Screen(val route: String, val label: String) {
 private val bottomNavItems = listOf(Screen.Map, Screen.Nearby)
 
 @Composable
-fun MMMapNavGraph() {
+fun MMMapNavGraph(
+    themeMode: ThemeMode,
+    onCycleTheme: () -> Unit,
+    isDarkTheme: Boolean,
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -70,7 +74,12 @@ fun MMMapNavGraph() {
             startDestination = Screen.Map.route,
         ) {
             composable(Screen.Map.route) {
-                MapScreen(bottomPadding = innerPadding.calculateBottomPadding())
+                MapScreen(
+                    bottomPadding = innerPadding.calculateBottomPadding(),
+                    isDarkTheme = isDarkTheme,
+                    themeMode = themeMode,
+                    onCycleTheme = onCycleTheme,
+                )
             }
             composable(Screen.Nearby.route) {
                 NearbyScreen()
