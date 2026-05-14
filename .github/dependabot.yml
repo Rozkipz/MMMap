@@ -1,0 +1,44 @@
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.kotlinx*"
+      androidx-compose:
+        patterns:
+          - "androidx.compose*"
+          - "androidx.activity*"
+          - "androidx.navigation*"
+      androidx-arch:
+        patterns:
+          - "androidx.room*"
+          - "androidx.datastore*"
+          - "androidx.work*"
+          - "androidx.hilt*"
+      hilt:
+        patterns:
+          - "com.google.dagger*"
+      networking:
+        patterns:
+          - "com.squareup.retrofit2*"
+          - "com.squareup.okhttp3*"
+      coil:
+        patterns:
+          - "io.coil-kt*"
+      maplibre:
+        patterns:
+          - "org.maplibre.gl*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
