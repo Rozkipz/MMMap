@@ -129,7 +129,7 @@ class DatasetSyncWorker @AssistedInject constructor(
                         }
                     }
                     fields.add(sb.toString())
-                    if (i < line.length && line[i] == ',') i++
+                    if (i < line.length && line[i] == ',') i++ else break
                 } else {
                     val end = line.indexOf(',', i).takeIf { it >= 0 } ?: line.length
                     fields.add(line.substring(i, end))

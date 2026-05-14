@@ -47,12 +47,6 @@ format:
 # Run lint + unit tests — do this before committing
 check: lint test
 
-# ─── Data ─────────────────────────────────────────────────────────────────────
-
-# Download the latest michelin-my-maps CSV and rebuild app/src/main/assets/michelin.db (no-op if already current)
-fetch-michelin-data:
-    ./scripts/fetch-michelin-db.sh
-
 # ─── Release ──────────────────────────────────────────────────────────────────
 
 # Build a signed release APK; optionally override version name and code
@@ -61,10 +55,6 @@ assemble-release version='' code='':
     {{gradle}} assembleRelease \
         {{ if version != '' { "-PversionName=" + version } else { "" } }} \
         {{ if code != '' { "-PversionCode=" + code } else { "" } }}
-
-# Bump versionName/versionCode — part is patch (default), minor, or major
-bump part="patch":
-    ./scripts/bump-version.sh {{part}}
 
 # Create a signed git tag and push it  →  e.g. `just tag 1.2.0`
 tag version:
@@ -86,12 +76,11 @@ gh-release version target='':
       gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --generate-notes "$APK#MMMap_v{{version}}.apk"
     fi
 
-# Full release pipeline: clean → fetch data → check → sign APK → tag → GitHub Release
+# Full release pipeline: clean → check → sign APK → tag → GitHub Release
 release version:
     just clean
-    just fetch-michelin-data
     just check
-    just assemble-release
+    just assemble-release {{version}}
     just tag {{version}}
     just gh-release {{version}}
 
@@ -100,8 +89,6 @@ release version:
 #     fdroid lint metadata/{{package}}.yml
 # fdroid-build-local: # Simulate an F-Droid reproducible build locally
 #     fdroid build --on-server --no-tarball {{package}}
-# fdroid-pr version:  # Open a PR against the fdroiddata repo
-#     ./scripts/open-fdroiddata-pr.sh {{version}}
 
 # ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -111,4 +98,38 @@ deps-audit:
 
 # Generate a release signing keystore and write keystore.properties (run once, back up the .jks)
 setup-keystore:
-    ./scripts/create-keystore.sh
+    #!/usr/bin/env bash
+    set -euo pipefail
+    KEYSTORE_FILE="mmmap-release.jks"
+    PROPS_FILE="keystore.properties"
+
+    if [[ -f "$KEYSTORE_FILE" ]]; then
+        echo "$KEYSTORE_FILE already exists — delete it manually to regenerate."
+        exit 1
+    fi
+
+    echo "Creating release keystore at $KEYSTORE_FILE"
+    echo "You will be prompted for a keystore password."
+
+    keytool -genkeypair \
+        -v \
+        -keystore "$KEYSTORE_FILE" \
+        -keyalg RSA \
+        -keysize 4096 \
+        -validity 10000 \
+        -alias mmmap \
+        -dname "CN=MMMap, O=MMMap, C=GB"
+
+    echo
+    echo "Enter keystore password (same as above):"
+    read -rs STORE_PASS
+    echo "Enter key password (leave blank to reuse keystore password):"
+    read -rs KEY_PASS
+    KEY_PASS="${KEY_PASS:-$STORE_PASS}"
+
+    printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=mmmap\nkeyPassword=%s\n' \
+        "$KEYSTORE_FILE" "$STORE_PASS" "$KEY_PASS" > "$PROPS_FILE"
+
+    echo
+    echo "Written to $PROPS_FILE"
+    echo "IMPORTANT: back up both $KEYSTORE_FILE and $PROPS_FILE — they are gitignored."
