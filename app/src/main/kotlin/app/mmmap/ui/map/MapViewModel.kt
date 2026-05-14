@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Build
 import android.os.CancellationSignal
 import android.os.Looper
@@ -19,9 +20,12 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import app.mmmap.BuildConfig
+import app.mmmap.data.db.entities.VisitedRestaurantEntity
 import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.repository.VisitedRepository
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import app.mmmap.data.sync.DatasetSyncWorker
 import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.domain.model.Distinction
@@ -156,6 +160,38 @@ class MapViewModel @Inject constructor(
             )
         }
     }
+
+    private val _importExportMessage = MutableStateFlow<String?>(null)
+    val importExportMessage: StateFlow<String?> = _importExportMessage
+
+    fun exportVisited(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val json = Json { prettyPrint = true }.encodeToString(visitedRepo.getAll())
+                context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                _importExportMessage.value = "Exported ${visitedRepo.count()} places"
+            }.onFailure {
+                _importExportMessage.value = "Export failed"
+            }
+        }
+    }
+
+    fun importVisited(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val json = context.contentResolver.openInputStream(uri)
+                    ?.use { it.readBytes().toString(Charsets.UTF_8) }
+                    ?: return@launch
+                val entities = Json.decodeFromString<List<VisitedRestaurantEntity>>(json)
+                visitedRepo.importAll(entities)
+                _importExportMessage.value = "Imported ${entities.size} places"
+            }.onFailure {
+                _importExportMessage.value = "Import failed — check the file format"
+            }
+        }
+    }
+
+    fun clearImportExportMessage() { _importExportMessage.value = null }
 
     fun forceRefresh() {
         viewModelScope.launch(Dispatchers.IO) {
