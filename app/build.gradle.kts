@@ -48,6 +48,8 @@ android {
 
     lint {
         disable += "NullSafeMutableLiveData"
+        // Crashes with IncompatibleClassChangeError due to Kotlin version mismatch in lint plugin
+        disable += "ComposableFlowOperator"
     }
 
     buildTypes {
