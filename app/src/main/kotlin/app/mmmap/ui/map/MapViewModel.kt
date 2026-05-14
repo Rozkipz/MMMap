@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val LOCATE_TIMEOUT_MS = 60_000L
+
 data class MapBounds(
     val minLat: Double, val maxLat: Double,
     val minLon: Double, val maxLon: Double,
@@ -80,10 +82,6 @@ class MapViewModel @Inject constructor(
     private var locateTimeoutJob: Job? = null
     private val locationManager by lazy {
         context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-    }
-
-    private companion object {
-        const val LOCATE_TIMEOUT_MS = 60_000L
     }
 
     init {

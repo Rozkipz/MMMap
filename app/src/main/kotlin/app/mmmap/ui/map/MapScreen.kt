@@ -62,12 +62,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.gson.JsonObject
 import app.mmmap.domain.model.Distinction
+import app.mmmap.domain.model.Restaurant
+import app.mmmap.ui.chipLabel
 import app.mmmap.ui.detail.RestaurantSheet
-import app.mmmap.ui.theme.BibGreen
-import app.mmmap.ui.theme.OneStarRed
-import app.mmmap.ui.theme.SelectedBlue
-import app.mmmap.ui.theme.StarGold
-import app.mmmap.ui.theme.TwoStarViolet
+import app.mmmap.ui.dotColor
 import app.mmmap.ui.theme.UserGrey
 import kotlinx.coroutines.launch
 import org.maplibre.android.MapLibre
@@ -99,7 +97,7 @@ private const val TILE_STYLE_DARK_URL = "https://basemaps.cartocdn.com/gl/dark-m
 
 private fun Color.toCssHex(): String = "#%06X".format(toArgb() and 0xFFFFFF)
 
-private fun buildCollection(restaurants: List<app.mmmap.domain.model.Restaurant>): FeatureCollection {
+private fun buildCollection(restaurants: List<Restaurant>): FeatureCollection {
     val features = restaurants.map { r ->
         val props = JsonObject().apply {
             addProperty(PROP_RESTAURANT_ID, r.id)
@@ -118,21 +116,21 @@ private fun addCustomLayers(style: Style, mapHolder: MapHolder) {
             PropertyFactory.circleColor(
                 Expression.match(
                     Expression.get(PROP_DISTINCTION),
-                    Expression.literal(SelectedBlue.toCssHex()),
-                    Expression.stop("3 Stars",      StarGold.toCssHex()),
-                    Expression.stop("2 Stars",      TwoStarViolet.toCssHex()),
-                    Expression.stop("1 Star",       OneStarRed.toCssHex()),
-                    Expression.stop("Bib Gourmand", BibGreen.toCssHex()),
+                    Expression.literal(Distinction.SELECTED.dotColor().toCssHex()),
+                    Expression.stop(Distinction.THREE_STAR.label,   Distinction.THREE_STAR.dotColor().toCssHex()),
+                    Expression.stop(Distinction.TWO_STAR.label,     Distinction.TWO_STAR.dotColor().toCssHex()),
+                    Expression.stop(Distinction.ONE_STAR.label,     Distinction.ONE_STAR.dotColor().toCssHex()),
+                    Expression.stop(Distinction.BIB_GOURMAND.label, Distinction.BIB_GOURMAND.dotColor().toCssHex()),
                 )
             ),
             PropertyFactory.circleRadius(
                 Expression.match(
                     Expression.get(PROP_DISTINCTION),
                     Expression.literal(9f),
-                    Expression.stop("3 Stars",      14f),
-                    Expression.stop("2 Stars",      13f),
-                    Expression.stop("1 Star",       12f),
-                    Expression.stop("Bib Gourmand", 10f),
+                    Expression.stop(Distinction.THREE_STAR.label,   14f),
+                    Expression.stop(Distinction.TWO_STAR.label,     13f),
+                    Expression.stop(Distinction.ONE_STAR.label,     12f),
+                    Expression.stop(Distinction.BIB_GOURMAND.label, 10f),
                 )
             ),
             PropertyFactory.circleStrokeWidth(1.5f),
@@ -472,18 +470,3 @@ private class MapHolder {
     var pendingCameraTarget: Pair<Double, Double>? = null
 }
 
-private fun Distinction.chipLabel() = when (this) {
-    Distinction.THREE_STAR   -> "3★"
-    Distinction.TWO_STAR     -> "2★"
-    Distinction.ONE_STAR     -> "1★"
-    Distinction.BIB_GOURMAND -> "Bib"
-    Distinction.SELECTED     -> "Selected"
-}
-
-private fun Distinction.dotColor() = when (this) {
-    Distinction.THREE_STAR   -> StarGold
-    Distinction.TWO_STAR     -> TwoStarViolet
-    Distinction.ONE_STAR     -> OneStarRed
-    Distinction.BIB_GOURMAND -> BibGreen
-    Distinction.SELECTED     -> SelectedBlue
-}

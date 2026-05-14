@@ -81,9 +81,9 @@ gh-release version target='':
     NOTES="fastlane/metadata/android/en-US/changelogs/$(cat .version-code 2>/dev/null || true).txt"
     TARGET_FLAG={{ if target != '' { '"--target ' + target + '"' } else { '""' } }}
     if [[ -f "$NOTES" ]]; then
-      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes-file "$NOTES" "$APK"
+      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes-file "$NOTES" "$APK#MMMap_v{{version}}.apk"
     else
-      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --generate-notes "$APK"
+      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --generate-notes "$APK#MMMap_v{{version}}.apk"
     fi
 
 # Full release pipeline: clean → fetch data → check → sign APK → tag → GitHub Release

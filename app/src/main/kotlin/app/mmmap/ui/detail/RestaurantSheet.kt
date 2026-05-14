@@ -3,6 +3,7 @@ package app.mmmap.ui.detail
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,10 +42,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.FoursquareDetail
 import app.mmmap.domain.model.Restaurant
-import app.mmmap.ui.theme.BibBrown
+import app.mmmap.ui.badgeColor
+import app.mmmap.ui.badgeLabel
 import app.mmmap.ui.theme.GreenStar
-import app.mmmap.ui.theme.SelectedBlue
-import app.mmmap.ui.theme.StarGold
 import coil3.compose.AsyncImage
 
 /** ViewModel-connected entry point used by the navigation graph. */
@@ -172,11 +173,11 @@ internal fun RestaurantSheetContent(
             ?.let { facilities ->
                 Spacer(Modifier.height(12.dp))
                 FlowRow(
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     facilities.forEach { facility ->
-                        androidx.compose.material3.Surface(
+                        Surface(
                             shape = MaterialTheme.shapes.small,
                             color = MaterialTheme.colorScheme.secondaryContainer,
                             modifier = Modifier.padding(vertical = 2.dp),
@@ -239,17 +240,3 @@ internal fun RestaurantSheetContent(
     }
 }
 
-internal fun Distinction.badgeLabel() = when (this) {
-    Distinction.THREE_STAR   -> "★★★  3 Stars"
-    Distinction.TWO_STAR     -> "★★  2 Stars"
-    Distinction.ONE_STAR     -> "★  1 Star"
-    Distinction.BIB_GOURMAND -> "Bib Gourmand"
-    Distinction.SELECTED     -> "MICHELIN Selected"
-}
-
-@Composable
-internal fun Distinction.badgeColor() = when (this) {
-    Distinction.THREE_STAR, Distinction.TWO_STAR, Distinction.ONE_STAR -> StarGold
-    Distinction.BIB_GOURMAND -> BibBrown
-    Distinction.SELECTED     -> SelectedBlue
-}

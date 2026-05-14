@@ -4,6 +4,7 @@ import app.mmmap.BuildConfig
 import app.mmmap.data.db.dao.FoursquareCacheDao
 import app.mmmap.data.db.entities.FoursquareCacheEntity
 import app.mmmap.data.remote.FoursquareApi
+import app.mmmap.data.remote.models.FsqHours
 import app.mmmap.domain.model.FoursquareDetail
 import app.mmmap.util.jaroWinklerDistance
 import kotlinx.serialization.encodeToString
@@ -62,21 +63,13 @@ class EnrichmentRepository @Inject constructor(
     }
 
     private fun FoursquareCacheEntity.toDetail(): FoursquareDetail {
-        val hours = openingHoursJson?.let {
-            runCatching {
-                val parsed = json.decodeFromString<app.mmmap.data.remote.models.FsqHours>(it)
-                parsed.display?.lines()?.toList() ?: emptyList()
-            }.getOrDefault(emptyList())
-        } ?: emptyList()
-
+        val hours: FsqHours? = openingHoursJson?.let {
+            runCatching { json.decodeFromString<FsqHours>(it) }.getOrNull()
+        }
         return FoursquareDetail(
             photoUrl = photoUrl,
-            openingHours = hours,
-            isOpenNow = openingHoursJson?.let {
-                runCatching {
-                    json.decodeFromString<app.mmmap.data.remote.models.FsqHours>(it).openNow
-                }.getOrNull()
-            },
+            openingHours = hours?.display?.lines()?.toList() ?: emptyList(),
+            isOpenNow = hours?.openNow,
             phone = phone,
             rating = rating,
         )

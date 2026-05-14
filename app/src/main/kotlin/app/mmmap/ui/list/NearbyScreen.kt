@@ -15,6 +15,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.detail.RestaurantSheet
+import app.mmmap.ui.shortLabel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,21 +93,14 @@ private fun NearbyRow(
             Text(
                 listOfNotNull(restaurant.distinction.shortLabel(), restaurant.cuisine, restaurant.price)
                     .joinToString("  ·  "),
-                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodySmall,
             )
         }
         Spacer(Modifier.width(12.dp))
         Text(
             text = if (distanceKm < 1f) "${(distanceKm * 1000).toInt()}m" else "${"%.1f".format(distanceKm)}km",
-            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall,
         )
     }
 }
 
-private fun app.mmmap.domain.model.Distinction.shortLabel() = when (this) {
-    app.mmmap.domain.model.Distinction.THREE_STAR -> "★★★"
-    app.mmmap.domain.model.Distinction.TWO_STAR -> "★★"
-    app.mmmap.domain.model.Distinction.ONE_STAR -> "★"
-    app.mmmap.domain.model.Distinction.BIB_GOURMAND -> "Bib"
-    app.mmmap.domain.model.Distinction.SELECTED -> "Selected"
-}

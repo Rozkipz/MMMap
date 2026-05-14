@@ -42,7 +42,7 @@ fun MMMapNavGraph(
                 bottomNavItems.forEach { screen ->
                     val selected = currentDestination
                         ?.hierarchy
-                        ?.any { it.route == screen.route } == true
+                        ?.any { it.route == screen.route } ?: false
                     NavigationBarItem(
                         selected = selected,
                         onClick = {

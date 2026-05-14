@@ -65,9 +65,7 @@ class DatasetSyncWorker @AssistedInject constructor(
         // 7:PhoneNumber 8:Url 9:WebsiteUrl 10:Award 11:GreenStar 12:FacilitiesAndServices 13:Description
         internal fun parseCsv(reader: BufferedReader): List<RestaurantEntity> {
             val entities = mutableListOf<RestaurantEntity>()
-            var firstLine = true
-            for (record in csvRecords(reader)) {
-                if (firstLine) { firstLine = false; continue }
+            for (record in csvRecords(reader).drop(1)) {
                 if (record.size < 13) continue
                 val url = record[8].trim().takeIf { it.isNotEmpty() } ?: continue
                 val lat = record[6].toDoubleOrNull() ?: continue

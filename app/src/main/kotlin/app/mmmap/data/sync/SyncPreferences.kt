@@ -19,6 +19,9 @@ class SyncPreferences @Inject constructor(
     suspend fun lastCsvSha(): String? = dataStore.data.first()[keySha]
 
     suspend fun setLastCsvSha(sha: String) {
-        dataStore.edit { it[keySha] = sha; it[keySyncAt] = System.currentTimeMillis() }
+        dataStore.edit {
+            it[keySha] = sha
+            it[keySyncAt] = System.currentTimeMillis()
+        }
     }
 }

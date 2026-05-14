@@ -1,5 +1,6 @@
 package app.mmmap.di
 
+import app.mmmap.BuildConfig
 import app.mmmap.data.remote.FoursquareApi
 import app.mmmap.data.remote.GitHubContentsApi
 import dagger.Module
@@ -27,28 +28,27 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
-            level = if (app.mmmap.BuildConfig.DEBUG)
-                HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                    else HttpLoggingInterceptor.Level.NONE
         })
         .build()
 
     @Provides
     @Singleton
     @Named("foursquare")
-    fun provideFoursquareRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit =
-        Retrofit.Builder()
-            .baseUrl(FoursquareApi.BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
+    fun provideFoursquareRetrofit(client: OkHttpClient, json: Json): Retrofit =
+        retrofit(FoursquareApi.BASE_URL, client, json)
 
     @Provides
     @Singleton
     @Named("github")
-    fun provideGitHubRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit =
+    fun provideGitHubRetrofit(client: OkHttpClient, json: Json): Retrofit =
+        retrofit(GitHubContentsApi.BASE_URL, client, json)
+
+    private fun retrofit(baseUrl: String, client: OkHttpClient, json: Json): Retrofit =
         Retrofit.Builder()
-            .baseUrl(GitHubContentsApi.BASE_URL)
-            .client(okHttpClient)
+            .baseUrl(baseUrl)
+            .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
 
