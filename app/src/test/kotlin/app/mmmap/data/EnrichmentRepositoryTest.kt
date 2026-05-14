@@ -259,8 +259,13 @@ class EnrichmentRepositoryTest {
     // ── BuildConfig / no API key ──────────────────────────────────────────────
 
     @Test fun nullStoredApiKey_buildConfigKeyUsedAsFallback() = runTest {
-        // Stored key is null → code falls back to BuildConfig.FSQ_API_KEY (set in local.properties)
-        // and still calls the API.
+        // Only runs when local.properties supplies FSQ_API_KEY (i.e. not in CI).
+        // BuildConfig.FSQ_API_KEY is blank when local.properties is absent, so the repo
+        // short-circuits before the API call — there is nothing to verify in that case.
+        org.junit.Assume.assumeTrue(
+            "Skipped: BuildConfig.FSQ_API_KEY not set (no local.properties)",
+            app.mmmap.BuildConfig.FSQ_API_KEY.isNotBlank(),
+        )
         every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
         coEvery { cacheDao.get("r1") } returns null
         coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(results = emptyList())
