@@ -74,7 +74,7 @@ class RestaurantDaoTest {
                    (id, name, address, location, latitude, longitude, award, greenStar,
                     cuisine, price, phoneNumber, url, websiteUrl, description, facilitiesAndServices)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                arrayOf(e.id, e.name, e.address, e.location, e.latitude, e.longitude,
+                arrayOf<Any?>(e.id, e.name, e.address, e.location, e.latitude, e.longitude,
                     e.award, if (e.greenStar) 1 else 0,
                     e.cuisine, e.price, e.phoneNumber, e.url,
                     e.websiteUrl, e.description, e.facilitiesAndServices)
@@ -106,18 +106,25 @@ class RestaurantDaoTest {
     }
 
     // ── observeInBounds ───────────────────────────────────────────────────────
+    // Helpers for the current multi-select signature:
+    //   awardsAll=1 → all awards, awardsAll=0 + awards list → restrict
+    //   tiersAll=1  → all price tiers, tiersAll=0 + priceTiers list → restrict (tier = LENGTH(price))
+
+    private suspend fun inBounds(
+        awardsAll: Int = 1, awards: List<String> = listOf(""),
+        tiersAll: Int = 1, priceTiers: List<Int> = listOf(0),
+    ) = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, awardsAll, awards, tiersAll, priceTiers).first()
 
     @Test fun boundsIncludesMatchingRow() = runTest {
         insertAll(entity("r1", 51.5, -0.1))
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, null, null, null).first()
+        val rows = inBounds()
         assertEquals(1, rows.size)
         assertEquals("r1", rows[0].id)
     }
 
     @Test fun boundsExcludesOutsideRow() = runTest {
         insertAll(entity("r1", 48.8, 2.3)) // Paris, outside London bounds
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, null, null, null).first()
-        assertTrue(rows.isEmpty())
+        assertTrue(inBounds().isEmpty())
     }
 
     @Test fun boundsOnlyReturnsInRange() = runTest {
@@ -125,7 +132,7 @@ class RestaurantDaoTest {
             entity("in",  51.5, -0.1),
             entity("out", 48.8,  2.3),
         )
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, null, null, null).first()
+        val rows = inBounds()
         assertEquals(1, rows.size)
         assertEquals("in", rows[0].id)
     }
@@ -135,47 +142,59 @@ class RestaurantDaoTest {
             entity("star1", 51.5, -0.1, award = "1 MICHELIN Star"),
             entity("star3", 51.6, -0.2, award = "3 MICHELIN Stars"),
         )
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, "1 MICHELIN Star", null, null).first()
+        val rows = inBounds(awardsAll = 0, awards = listOf("1 MICHELIN Star"))
         assertEquals(1, rows.size)
         assertEquals("star1", rows[0].id)
     }
 
-    @Test fun awardFilterNullReturnsAll() = runTest {
+    @Test fun awardFilterAllReturnsAll() = runTest {
         insertAll(
             entity("r1", 51.5, -0.1, award = "1 MICHELIN Star"),
             entity("r2", 51.6, -0.2, award = "Bib Gourmand"),
         )
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, null, null, null).first()
+        assertEquals(2, inBounds().size)
+    }
+
+    @Test fun awardFilterMultipleAwards() = runTest {
+        insertAll(
+            entity("r1", 51.5, -0.1, award = "1 MICHELIN Star"),
+            entity("r2", 51.6, -0.2, award = "2 MICHELIN Stars"),
+            entity("r3", 51.4, -0.0, award = "Bib Gourmand"),
+        )
+        val rows = inBounds(awardsAll = 0, awards = listOf("1 MICHELIN Star", "2 MICHELIN Stars"))
         assertEquals(2, rows.size)
     }
 
-    @Test fun cuisineFilterMatchesExact() = runTest {
+    @Test fun priceTierFilter_tier1() = runTest {
         insertAll(
-            entity("r1", 51.5, -0.1, cuisine = "French"),
-            entity("r2", 51.6, -0.2, cuisine = "Japanese"),
-        )
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, null, "French", null).first()
-        assertEquals(1, rows.size)
-        assertEquals("r1", rows[0].id)
-    }
-
-    @Test fun priceFilterMatchesExact() = runTest {
-        insertAll(
-            entity("cheap", 51.5, -0.1, price = "£"),
+            entity("cheap",  51.5, -0.1, price = "£"),
             entity("pricey", 51.6, -0.2, price = "££££"),
         )
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, null, null, "£").first()
+        val rows = inBounds(tiersAll = 0, priceTiers = listOf(1))
         assertEquals(1, rows.size)
         assertEquals("cheap", rows[0].id)
     }
 
-    @Test fun combinedFiltersApplyAndSemantics() = runTest {
+    @Test fun priceTierFilter_tier4() = runTest {
         insertAll(
-            entity("match",    51.5, -0.1, award = "1 MICHELIN Star", cuisine = "French", price = "£££"),
-            entity("no_award", 51.6, -0.2, award = "Bib Gourmand",    cuisine = "French", price = "£££"),
-            entity("no_cuisine",51.4,-0.05, award = "1 MICHELIN Star", cuisine = "Italian",price = "£££"),
+            entity("cheap",  51.5, -0.1, price = "£"),
+            entity("pricey", 51.6, -0.2, price = "££££"),
         )
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, "1 MICHELIN Star", "French", "£££").first()
+        val rows = inBounds(tiersAll = 0, priceTiers = listOf(4))
+        assertEquals(1, rows.size)
+        assertEquals("pricey", rows[0].id)
+    }
+
+    @Test fun combinedAwardAndPriceTierFilter() = runTest {
+        insertAll(
+            entity("match",     51.5, -0.1, award = "1 MICHELIN Star", price = "£££"),
+            entity("no_award",  51.6, -0.2, award = "Bib Gourmand",    price = "£££"),
+            entity("no_price",  51.4, -0.05,award = "1 MICHELIN Star", price = "£"),
+        )
+        val rows = inBounds(
+            awardsAll = 0, awards = listOf("1 MICHELIN Star"),
+            tiersAll = 0, priceTiers = listOf(3),
+        )
         assertEquals(1, rows.size)
         assertEquals("match", rows[0].id)
     }
@@ -185,7 +204,7 @@ class RestaurantDaoTest {
             entity("r2", 51.5, -0.1).copy(name = "Zuma"),
             entity("r1", 51.6, -0.2).copy(name = "Alain Ducasse"),
         )
-        val rows = dao.observeInBounds(51.0, 52.0, -1.0, 0.0, null, null, null).first()
+        val rows = inBounds()
         assertEquals("r1", rows[0].id)
         assertEquals("r2", rows[1].id)
     }
