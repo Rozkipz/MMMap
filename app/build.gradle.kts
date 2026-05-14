@@ -1,5 +1,15 @@
 import java.util.Properties
 
+fun gitVersionName(): String {
+    fun exec(vararg cmd: String) = providers.exec { commandLine(*cmd) }
+        .standardOutput.asText.get().trim()
+    return try {
+        val tag = exec("git", "describe", "--tags", "--abbrev=0")
+        val sha = exec("git", "rev-parse", "--short", "HEAD")
+        "$tag-$sha"
+    } catch (_: Exception) { "dev" }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -28,7 +38,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = (findProperty("versionCode") as? String)?.toInt() ?: 1
-        versionName = (findProperty("versionName") as? String) ?: "0.1.0"
+        versionName = (findProperty("versionName") as? String) ?: gitVersionName()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -48,8 +58,6 @@ android {
 
     lint {
         disable += "NullSafeMutableLiveData"
-        // Crashes with IncompatibleClassChangeError due to Kotlin version mismatch in lint plugin
-        disable += "ComposableFlowOperator"
     }
 
     buildTypes {
