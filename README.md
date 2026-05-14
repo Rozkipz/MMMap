@@ -15,10 +15,10 @@
 
 ## Features
 
-- **Offline-first** — full MICHELIN dataset bundled in the APK, no sign-in required
+- **Offline-first** — dataset synced on first launch and cached locally; works without internet after the initial sync, no sign-in required
 - **Filter** by award (★★★ / ★★ / ★ / Bib Gourmand / Selected), cuisine, and price tier
-- **Near Me** — list of restaurants sorted by walking distance
-- **Rich detail** — photos, opening hours, phone number, and website via Foursquare
+- **Near Me** — 50 nearest restaurants sorted by distance from your location
+- **Rich detail** — photos and opening hours via Foursquare; phone number and website from the MICHELIN dataset
 - **Deep links** directly to each restaurant's MICHELIN Guide page
 - **Automatic updates** — dataset syncs in the background every 24 hours
 
@@ -47,8 +47,9 @@ See [Development setup](#development-setup) below.
 
 | Tool | Version |
 |------|---------|
-| Android Studio | Ladybug or newer |
+| Android Studio | Meerkat (2024.3.1) or newer |
 | JDK | 17 |
+| Android device/emulator | API 26 (Android 8.0) or higher |
 | [`just`](https://github.com/casey/just) | any recent |
 
 Install `just`:
