@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MMMap"
+rootProject.name = "Mmmap"
 include(":app")

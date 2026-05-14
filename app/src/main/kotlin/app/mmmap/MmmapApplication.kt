@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import org.maplibre.android.MapLibre
 
 @HiltAndroidApp
-class MMMapApplication : Application(), Configuration.Provider {
+class MmmapApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var tileCacheManager: TileCacheManager

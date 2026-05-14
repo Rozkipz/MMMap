@@ -1,4 +1,4 @@
-MMMap puts every restaurant in the MICHELIN Guide on a single map — from three-star temples of gastronomy to Bib Gourmand hidden gems.
+Mmmap puts every restaurant in the MICHELIN Guide on a single map — from three-star temples of gastronomy to Bib Gourmand hidden gems.
 
 Features:
 • Browse all MICHELIN Guide restaurants on a fast, offline-first map

@@ -75,11 +75,11 @@ gh-release version target='':
     NOTES_FILE="fastlane/metadata/android/en-US/changelogs/$(cat .version-code 2>/dev/null || true).txt"
     TARGET_FLAG={{ if target != '' { '"--target ' + target + '"' } else { '""' } }}
     if [[ -f "$NOTES_FILE" ]]; then
-      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes-file "$NOTES_FILE" "$APK#MMMap_v{{version}}.apk"
+      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes-file "$NOTES_FILE" "$APK#Mmmap_v{{version}}.apk"
     else
       PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)
       CHANGELOG=$(git log "${PREV}..HEAD" --pretty=format:"- %s")
-      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes "$CHANGELOG" "$APK#MMMap_v{{version}}.apk"
+      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes "$CHANGELOG" "$APK#Mmmap_v{{version}}.apk"
     fi
 
 # Full release pipeline: clean → check → sign APK → tag → GitHub Release
@@ -124,7 +124,7 @@ setup-keystore:
         -keysize 4096 \
         -validity 10000 \
         -alias mmmap \
-        -dname "CN=MMMap, O=MMMap, C=GB"
+        -dname "CN=Mmmap, O=Mmmap, C=GB"
 
     echo
     echo "Enter keystore password (same as above):"

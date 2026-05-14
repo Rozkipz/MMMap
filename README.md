@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="docs/banner.svg" alt="MMMap" width="860">
+<img src="docs/banner.svg" alt="Mmmap" width="860">
 
-[![CI](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
+[![CI](https://github.com/Rozkipz/Mmmap/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Rozkipz/Mmmap/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Browse every restaurant in the MICHELIN Guide — offline, on an interactive map.**
 
-[Download APK](https://github.com/Rozkipz/MMMap/releases/latest) · [Report a bug](https://github.com/Rozkipz/MMMap/issues) · [Request a feature](https://github.com/Rozkipz/MMMap/issues)
+[Download APK](https://github.com/Rozkipz/Mmmap/releases/latest) · [Report a bug](https://github.com/Rozkipz/Mmmap/issues) · [Request a feature](https://github.com/Rozkipz/Mmmap/issues)
 
 </div>
 
@@ -32,7 +32,7 @@
 ## Install
 
 ### Download (sideload)
-1. Download `MMMap_$version.apk` from the [latest release](https://github.com/Rozkipz/MMMap/releases/latest)
+1. Download `Mmmap_$version.apk` from the [latest release](https://github.com/Rozkipz/Mmmap/releases/latest)
 2. On your phone: **Settings → Security → Install unknown apps** → allow your browser
 3. Open the downloaded APK and tap **Install**
 
