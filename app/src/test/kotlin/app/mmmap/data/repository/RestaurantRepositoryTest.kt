@@ -50,15 +50,52 @@ class RestaurantRepositoryTest {
         assertEquals("££££", domain.price)
     }
 
-    @Test fun observeInBounds_passesAllFiltersToDao() = runTest {
+    @Test fun observeInBounds_nullFilters_passesAllFlagsToDao() = runTest {
         coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
 
-        repo.observeInBounds(
-            minLat = 50.0, maxLat = 52.0, minLon = -1.0, maxLon = 1.0,
-            award = "1 Star", cuisine = "French", price = "£££",
-        ).first()
+        repo.observeInBounds(minLat = 50.0, maxLat = 52.0, minLon = -1.0, maxLon = 1.0).first()
 
-        coVerify { dao.observeInBounds(50.0, 52.0, -1.0, 1.0, "1 Star", "French", "£££") }
+        coVerify { dao.observeInBounds(50.0, 52.0, -1.0, 1.0, null, 1, any()) }
+    }
+
+    @Test fun observeInBounds_cuisineFilter_exactMatch() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+            listOf(entity("r1", cuisine = "French"), entity("r2", cuisine = "Japanese"))
+        )
+
+        val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = setOf("French")).first()
+
+        assertEquals(1, result.size)
+        assertEquals("r1", result[0].id)
+    }
+
+    @Test fun observeInBounds_cuisineFilter_matchesPartOfCompoundCuisine() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+            listOf(entity("r1", cuisine = "French, Contemporary"), entity("r2", cuisine = "Japanese"))
+        )
+
+        val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = setOf("French")).first()
+
+        assertEquals(1, result.size)
+        assertEquals("r1", result[0].id)
+    }
+
+    @Test fun observeInBounds_cuisineFilter_emptySetReturnsNone() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+            listOf(entity("r1", cuisine = "French"))
+        )
+
+        val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = emptySet()).first()
+
+        assertEquals(emptyList<Any>(), result)
+    }
+
+    @Test fun observeInBounds_priceTierSet_passedToDao() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+
+        repo.observeInBounds(50.0, 52.0, -1.0, 1.0, priceTiers = setOf(2, 3)).first()
+
+        coVerify { dao.observeInBounds(50.0, 52.0, -1.0, 1.0, null, 0, match { it.containsAll(listOf(2, 3)) }) }
     }
 
     @Test fun observeInBounds_emptyResultReturnsEmptyList() = runTest {
@@ -95,12 +132,56 @@ class RestaurantRepositoryTest {
         assertEquals(42, repo.count())
     }
 
+    @Test fun observeInBounds_cuisineFilter_nullReturnsAll() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+            listOf(entity("r1", cuisine = "French"), entity("r2", cuisine = "Japanese"))
+        )
+
+        val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = null).first()
+
+        assertEquals(2, result.size)
+    }
+
+    @Test fun observeInBounds_cuisineFilter_multipleSelectionsKeepAll() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+            listOf(entity("r1", cuisine = "French"), entity("r2", cuisine = "Japanese"), entity("r3", cuisine = "Nordic"))
+        )
+
+        val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = setOf("French", "Japanese")).first()
+
+        assertEquals(2, result.size)
+        assertEquals(setOf("r1", "r2"), result.map { it.id }.toSet())
+    }
+
+    @Test fun observeInBounds_cuisineFilter_nullCuisineRestaurantExcluded() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+            listOf(entity("r1", cuisine = "French"), entity("r2", cuisine = null))
+        )
+
+        val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = setOf("French")).first()
+
+        assertEquals(1, result.size)
+        assertEquals("r1", result[0].id)
+    }
+
     // ── distinctCuisines / distinctPrices ─────────────────────────────────────
 
     @Test fun distinctCuisines_delegatesToDao() = runTest {
         coEvery { dao.distinctCuisines() } returns listOf("French", "Japanese")
 
         assertEquals(listOf("French", "Japanese"), repo.distinctCuisines())
+    }
+
+    @Test fun distinctCuisines_splitsCompoundStrings() = runTest {
+        coEvery { dao.distinctCuisines() } returns listOf("French, Contemporary", "Japanese")
+
+        assertEquals(listOf("Contemporary", "French", "Japanese"), repo.distinctCuisines())
+    }
+
+    @Test fun distinctCuisines_deduplicatesAcrossRows() = runTest {
+        coEvery { dao.distinctCuisines() } returns listOf("French", "French, Contemporary", "Contemporary")
+
+        assertEquals(listOf("Contemporary", "French"), repo.distinctCuisines())
     }
 
     @Test fun distinctPrices_delegatesToDao() = runTest {

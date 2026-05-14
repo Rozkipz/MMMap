@@ -6,16 +6,14 @@ import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.DarkMode
@@ -23,6 +21,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Tune
 import app.mmmap.ThemeMode
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,7 +65,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.gson.JsonObject
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
-import app.mmmap.ui.chipLabel
 import app.mmmap.ui.detail.RestaurantSheet
 import app.mmmap.ui.dotColor
 import app.mmmap.ui.settings.FoursquareKeyDialog
@@ -147,10 +145,10 @@ private fun addCustomLayers(style: Style, mapHolder: MapHolder) {
     // Soft glow halo — blurred large circle behind the crisp dot
     style.addLayer(
         CircleLayer(USER_GLOW_ID, USER_SOURCE_ID).withProperties(
-            PropertyFactory.circleRadius(22f),
+            PropertyFactory.circleRadius(32f),
             PropertyFactory.circleColor(UserGrey.toCssHex()),
             PropertyFactory.circleBlur(1f),
-            PropertyFactory.circleOpacity(0.4f),
+            PropertyFactory.circleOpacity(0.55f),
         )
     )
     // Crisp inner dot
@@ -185,6 +183,7 @@ fun MapScreen(
     val restaurants        by viewModel.restaurants.collectAsState()
     val selectedRestaurant by viewModel.selectedRestaurant.collectAsState()
     val filters            by viewModel.filters.collectAsState()
+    val availableCuisines  by viewModel.availableCuisines.collectAsState()
     val userLatLon         by viewModel.userLatLon.collectAsState()
     val isLocating         by viewModel.isLocating.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -195,6 +194,7 @@ fun MapScreen(
     var showAbout         by remember { mutableStateOf(false) }
     var showKeyDialog     by remember { mutableStateOf(false) }
     var showDebug         by remember { mutableStateOf(false) }
+    var showFiltersSheet  by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val context = LocalContext.current
@@ -346,7 +346,7 @@ fun MapScreen(
             modifier = Modifier.fillMaxSize(),
         )
 
-        // Filter bar — frosted surface card floating over the map (Google Maps style)
+        // Top action bar — frosted surface floating over the map
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -355,63 +355,49 @@ fun MapScreen(
             shadowElevation = 4.dp,
         ) {
             Row(
-                modifier = Modifier.statusBarsPadding(),
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                LazyRow(
-                    contentPadding = PaddingValues(start = 12.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    items(Distinction.entries) { d ->
-                        FilterChip(
-                            selected = filters.distinction == d,
-                            onClick = {
-                                viewModel.updateFilters(
-                                    filters.copy(distinction = if (filters.distinction == d) null else d)
-                                )
-                            },
-                            label = { Text(d.chipLabel()) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = d.dotColor().copy(alpha = 0.15f),
-                                labelColor = d.dotColor(),
-                                selectedContainerColor = d.dotColor().copy(alpha = 0.4f),
-                                selectedLabelColor = d.dotColor(),
-                            ),
+                val anyFilterActive = filters.distinction != null ||
+                        filters.cuisines != null || filters.priceTiers != null
+                val activeCount = listOfNotNull(
+                    filters.distinction,
+                    filters.priceTiers?.takeIf { it.isNotEmpty() },
+                    filters.cuisines?.takeIf { it.isNotEmpty() },
+                ).size
+                FilterChip(
+                    selected = anyFilterActive,
+                    onClick = { showFiltersSheet = true },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize),
                         )
-                    }
+                    },
+                    label = { Text(if (activeCount > 0) "Filters · $activeCount" else "Filters") },
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = onCycleTheme) {
+                    Icon(
+                        imageVector = when (themeMode) {
+                            ThemeMode.AUTO  -> Icons.Default.Brightness4
+                            ThemeMode.LIGHT -> Icons.Default.LightMode
+                            ThemeMode.DARK  -> Icons.Default.DarkMode
+                        },
+                        contentDescription = "Toggle theme",
+                    )
                 }
                 Box {
-                    IconButton(
-                        onClick = { menuExpanded = true },
-                        modifier = Modifier.padding(end = 4.dp),
-                    ) {
+                    IconButton(onClick = { menuExpanded = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")
                     }
                     DropdownMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                     ) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(when (themeMode) {
-                                    ThemeMode.AUTO  -> "Light mode"
-                                    ThemeMode.LIGHT -> "Dark mode"
-                                    ThemeMode.DARK  -> "Auto (system)"
-                                })
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    when (themeMode) {
-                                        ThemeMode.AUTO  -> Icons.Default.LightMode
-                                        ThemeMode.LIGHT -> Icons.Default.DarkMode
-                                        ThemeMode.DARK  -> Icons.Default.Brightness4
-                                    },
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = { onCycleTheme(); menuExpanded = false },
-                        )
                         DropdownMenuItem(
                             text = { Text("Foursquare API Key") },
                             leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
@@ -487,7 +473,20 @@ fun MapScreen(
 
     val ds = debugState
     if (showDebug && ds != null) {
-        DebugInfoDialog(state = ds, onDismiss = { showDebug = false })
+        DebugInfoDialog(
+            state = ds,
+            onDismiss = { showDebug = false },
+            onForceRefresh = { viewModel.forceRefresh() },
+        )
+    }
+
+    if (showFiltersSheet) {
+        FiltersSheet(
+            filters = filters,
+            availableCuisines = availableCuisines,
+            onFiltersChange = { viewModel.updateFilters(it) },
+            onDismiss = { showFiltersSheet = false },
+        )
     }
 }
 
