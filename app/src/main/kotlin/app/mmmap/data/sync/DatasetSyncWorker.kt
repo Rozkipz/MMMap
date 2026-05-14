@@ -52,7 +52,7 @@ class DatasetSyncWorker @AssistedInject constructor(
         val request = Request.Builder().url(GitHubContentsApi.CSV_RAW_URL).build()
         return okHttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
-            val body = response.body ?: throw IOException("Empty body")
+            val body = response.body
             body.charStream().buffered().use { parseCsv(it) }
         }
     }
