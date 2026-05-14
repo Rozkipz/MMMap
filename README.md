@@ -32,7 +32,7 @@
 ## Install
 
 ### Download (sideload)
-1. Download `app-release.apk` from the [latest release](https://github.com/Rozkipz/MMMap/releases/latest)
+1. Download `MMMap_$version.apk` from the [latest release](https://github.com/Rozkipz/MMMap/releases/latest)
 2. On your phone: **Settings → Security → Install unknown apps** → allow your browser
 3. Open the downloaded APK and tap **Install**
 
