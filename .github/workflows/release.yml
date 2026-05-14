@@ -24,7 +24,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -79,7 +79,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
 
       - name: Download APK
         uses: actions/download-artifact@v4
