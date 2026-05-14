@@ -17,6 +17,7 @@
 
 - **Offline-first** — dataset synced on first launch and cached locally; works without internet after the initial sync, no sign-in required
 - **Filter** by award (★★★ / ★★ / ★ / Bib Gourmand / Selected), cuisine, and price tier
+- **Been here** — mark restaurants you've visited; pins glow gold on the map
 - **Near Me** — 50 nearest restaurants sorted by distance from your location
 - **Rich detail** — photos and opening hours via Foursquare; phone number and website from the MICHELIN dataset
 - **Deep links** directly to each restaurant's MICHELIN Guide page
@@ -91,7 +92,7 @@ just check          # lint + tests (run before committing)
 Contributions are welcome. Please:
 
 1. Open an issue first for anything beyond a small fix
-2. Fork the repo and create a feature branch (`git checkout -b feat/my-change`)
+2. Fork the repo and create a feature branch
 3. Keep commits focused — one logical change per commit
 4. Run `just check` before pushing; CI enforces lint and 75% coverage on new code
 5. Open a pull request against `main`
@@ -118,9 +119,12 @@ All dependencies are either Apache 2.0, MIT, or LGPL-licensed — fully F-Droid-
 
 ## Roadmap
 
-- [ ] F-Droid / IzzyOnDroid distribution
-- [ ] Offline tile bundles for full offline use
+- [ ] Visited list — browse everywhere you've been, sorted by visit date
+- [ ] Visited filters — "Visited only" / "Unvisited only" chip in the filters sheet
+- [ ] Import / export visited data — JSON or CSV backup (schema is already self-contained)
 - [ ] Country selector to narrow the dataset
+- [ ] Offline tile bundles for full offline use
+- [ ] F-Droid / IzzyOnDroid distribution
 
 ---
 
