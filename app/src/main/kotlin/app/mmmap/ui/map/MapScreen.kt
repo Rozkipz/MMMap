@@ -69,6 +69,7 @@ import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.detail.RestaurantSheet
 import app.mmmap.ui.dotColor
 import app.mmmap.ui.settings.CacheSettingsDialog
+import app.mmmap.ui.theme.StarGold
 import app.mmmap.ui.settings.FoursquareKeyDialog
 import app.mmmap.ui.theme.UserGrey
 import kotlinx.coroutines.launch
@@ -89,11 +90,13 @@ import org.maplibre.geojson.Point
 
 private const val SOURCE_ID      = "restaurants-source"
 private const val LAYER_ID       = "restaurants-layer"
+private const val VISITED_GLOW_ID = "restaurants-visited-glow"
 private const val USER_SOURCE_ID  = "user-location-source"
 private const val USER_GLOW_ID    = "user-location-glow"
 private const val USER_LAYER_ID   = "user-location-layer"
 private const val PROP_RESTAURANT_ID = "id"
 private const val PROP_DISTINCTION   = "distinction"
+private const val PROP_VISITED       = "visited"
 
 // OpenFreeMap light style; CARTO Dark Matter for dark mode (both free, no API key)
 private const val TILE_STYLE_URL      = "https://tiles.openfreemap.org/styles/liberty"
@@ -101,11 +104,12 @@ private const val TILE_STYLE_DARK_URL = "https://basemaps.cartocdn.com/gl/dark-m
 
 private fun Color.toCssHex(): String = "#%06X".format(toArgb() and 0xFFFFFF)
 
-private fun buildCollection(restaurants: List<Restaurant>): FeatureCollection {
+private fun buildCollection(restaurants: List<Restaurant>, visitedIds: Set<String>): FeatureCollection {
     val features = restaurants.map { r ->
         val props = JsonObject().apply {
             addProperty(PROP_RESTAURANT_ID, r.id)
             addProperty(PROP_DISTINCTION, r.distinction.label)
+            addProperty(PROP_VISITED, r.id in visitedIds)
         }
         Feature.fromGeometry(Point.fromLngLat(r.longitude, r.latitude), props)
     }
@@ -115,6 +119,14 @@ private fun buildCollection(restaurants: List<Restaurant>): FeatureCollection {
 private fun addCustomLayers(style: Style, mapHolder: MapHolder) {
     val restaurantSource = GeoJsonSource(SOURCE_ID)
     style.addSource(restaurantSource)
+    val visitedGlow = CircleLayer(VISITED_GLOW_ID, SOURCE_ID).withProperties(
+        PropertyFactory.circleRadius(26f),
+        PropertyFactory.circleColor(StarGold.toCssHex()),
+        PropertyFactory.circleBlur(0.9f),
+        PropertyFactory.circleOpacity(0.55f),
+    )
+    visitedGlow.setFilter(Expression.eq(Expression.get(PROP_VISITED), Expression.literal(true)))
+    style.addLayer(visitedGlow)
     style.addLayer(
         CircleLayer(LAYER_ID, SOURCE_ID).withProperties(
             PropertyFactory.circleColor(
@@ -137,8 +149,20 @@ private fun addCustomLayers(style: Style, mapHolder: MapHolder) {
                     Expression.stop(Distinction.BIB_GOURMAND.label, 10f),
                 )
             ),
-            PropertyFactory.circleStrokeWidth(1.5f),
-            PropertyFactory.circleStrokeColor("#FFFFFF"),
+            PropertyFactory.circleStrokeWidth(
+                Expression.switchCase(
+                    Expression.eq(Expression.get(PROP_VISITED), Expression.literal(true)),
+                    Expression.literal(2.5f),
+                    Expression.literal(1.5f),
+                )
+            ),
+            PropertyFactory.circleStrokeColor(
+                Expression.switchCase(
+                    Expression.eq(Expression.get(PROP_VISITED), Expression.literal(true)),
+                    Expression.literal(StarGold.toCssHex()),
+                    Expression.literal("#FFFFFF"),
+                )
+            ),
             PropertyFactory.circleOpacity(0.9f),
         )
     )
@@ -186,6 +210,7 @@ fun MapScreen(
     val selectedRestaurant by viewModel.selectedRestaurant.collectAsState()
     val filters            by viewModel.filters.collectAsState()
     val availableCuisines  by viewModel.availableCuisines.collectAsState()
+    val visitedIds         by viewModel.visitedIds.collectAsState()
     val userLatLon         by viewModel.userLatLon.collectAsState()
     val isLocating         by viewModel.isLocating.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -323,7 +348,7 @@ fun MapScreen(
                 }
             },
             update = { _ ->
-                val collection = buildCollection(restaurants)
+                val collection = buildCollection(restaurants, visitedIds)
                 val map = mapHolder.map
                 if (map == null) {
                     // Map not ready yet — stash so getMapAsync callback can apply it

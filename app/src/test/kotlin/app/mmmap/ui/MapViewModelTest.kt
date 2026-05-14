@@ -5,6 +5,7 @@ import android.location.LocationManager
 import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.prefs.MapCachePreferences
 import app.mmmap.data.repository.RestaurantRepository
+import app.mmmap.data.repository.VisitedRepository
 import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.map.TileCacheManager
 import app.mmmap.domain.model.Distinction
@@ -49,6 +50,9 @@ class MapViewModelTest {
     private val syncPrefs: SyncPreferences = mockk(relaxed = true)
     private val tileCacheManager: TileCacheManager = mockk(relaxed = true)
     private val workManager: WorkManager = mockk(relaxed = true)
+    private val visitedRepo: VisitedRepository = mockk(relaxed = true) {
+        every { visitedIds } returns flowOf(emptySet())
+    }
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
@@ -62,7 +66,7 @@ class MapViewModelTest {
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
         every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
         every { tileCacheManager.maxSizeMb } returns flowOf(MapCachePreferences.DEFAULT_CACHE_MB)
-        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager)
+        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
     }
 
     @After fun tearDown() {
@@ -234,7 +238,7 @@ class MapViewModelTest {
 
     @Test fun cacheSizeMb_emitsFromTileCacheManager() = runTest {
         every { tileCacheManager.maxSizeMb } returns flowOf(500L)
-        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager)
+        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
         val values = mutableListOf<Long>()
         val job = freshVm.cacheSizeMb.onEach { values.add(it) }.launchIn(this)
         advanceUntilIdle()

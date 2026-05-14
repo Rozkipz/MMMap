@@ -2,6 +2,7 @@ package app.mmmap.ui.detail
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
@@ -33,8 +35,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -56,8 +60,16 @@ fun RestaurantSheet(
 ) {
     val enrichment by viewModel.enrichment.collectAsState()
     val loading by viewModel.loading.collectAsState()
+    val isVisited by viewModel.isVisited.collectAsState()
     LaunchedEffect(restaurant.id) { viewModel.loadEnrichment(restaurant) }
-    RestaurantSheetContent(restaurant, onDismiss, enrichment, loading)
+    RestaurantSheetContent(
+        restaurant = restaurant,
+        onDismiss = onDismiss,
+        enrichment = enrichment,
+        loading = loading,
+        isVisited = isVisited,
+        onVisitedChange = { viewModel.setVisited(restaurant, it) },
+    )
 }
 
 /** Pure-state composable — no ViewModel dependency, directly testable. */
@@ -68,6 +80,8 @@ internal fun RestaurantSheetContent(
     onDismiss: () -> Unit,
     enrichment: FoursquareDetail?,
     loading: Boolean,
+    isVisited: Boolean = false,
+    onVisitedChange: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -194,6 +208,24 @@ internal fun RestaurantSheetContent(
             }
 
         Spacer(Modifier.height(16.dp))
+
+        // "Been here" toggle
+        val haptic = LocalHapticFeedback.current
+        val toggle: (Boolean) -> Unit = { newValue ->
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onVisitedChange(newValue)
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { toggle(!isVisited) }
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(checked = isVisited, onCheckedChange = toggle)
+            Spacer(Modifier.width(4.dp))
+            Text("I've been here", style = MaterialTheme.typography.bodyMedium)
+        }
 
         // Action row
         Row(verticalAlignment = Alignment.CenterVertically) {
