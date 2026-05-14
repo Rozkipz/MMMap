@@ -3,7 +3,9 @@ package app.mmmap.data.db.entities
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Entity(tableName = "visited_restaurant")
 data class VisitedRestaurantEntity(
     @PrimaryKey @ColumnInfo(name = "restaurant_id") val restaurantId: String,

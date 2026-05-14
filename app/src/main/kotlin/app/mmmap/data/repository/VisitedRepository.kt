@@ -33,5 +33,9 @@ class VisitedRepository @Inject constructor(private val dao: VisitedDao) {
         }
     }
 
+    suspend fun getAll(): List<VisitedRestaurantEntity> = dao.getAll()
+
+    suspend fun importAll(entities: List<VisitedRestaurantEntity>) = dao.insertAll(entities)
+
     suspend fun count(): Int = dao.count()
 }

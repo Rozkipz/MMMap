@@ -35,6 +35,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -52,7 +55,9 @@ import androidx.compose.ui.Alignment
 import app.mmmap.ui.about.AboutDialog
 import app.mmmap.ui.debug.DebugInfoDialog
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -225,6 +230,20 @@ fun MapScreen(
     var showDebug         by remember { mutableStateOf(false) }
     var showFiltersSheet  by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val importExportMessage by viewModel.importExportMessage.collectAsState()
+    LaunchedEffect(importExportMessage) {
+        val msg = importExportMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(msg)
+        viewModel.clearImportExportMessage()
+    }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri -> if (uri != null) viewModel.exportVisited(uri) }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) viewModel.importVisited(uri) }
 
     val context = LocalContext.current
     val mapHolder = remember { MapHolder() }
@@ -277,7 +296,8 @@ fun MapScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
+    Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
 
         AndroidView(
             factory = { ctx ->
@@ -440,6 +460,16 @@ fun MapScreen(
                             onClick = { showCacheDialog = true; menuExpanded = false },
                         )
                         DropdownMenuItem(
+                            text = { Text("Export visited") },
+                            leadingIcon = { Icon(Icons.Default.Upload, contentDescription = null) },
+                            onClick = { exportLauncher.launch("mmmap-visited.json"); menuExpanded = false },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Import visited") },
+                            leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
+                            onClick = { importLauncher.launch(arrayOf("application/json")); menuExpanded = false },
+                        )
+                        DropdownMenuItem(
                             text = { Text("Diagnostics") },
                             leadingIcon = { Icon(Icons.Default.BugReport, contentDescription = null) },
                             onClick = { viewModel.loadDebugInfo(); showDebug = true; menuExpanded = false },
@@ -533,6 +563,7 @@ fun MapScreen(
             onDismiss = { showFiltersSheet = false },
         )
     }
+    }  // Scaffold content lambda
 }
 
 /** Plain holder — not MutableState, so updating it doesn't trigger recomposition. */
