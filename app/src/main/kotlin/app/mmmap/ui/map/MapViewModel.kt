@@ -51,10 +51,13 @@ data class MapBounds(
     val minLon: Double, val maxLon: Double,
 )
 
+enum class VisitedFilter { VISITED_ONLY, UNVISITED_ONLY }
+
 data class MapFilters(
     val distinctions: Set<Distinction>? = null,
     val cuisines: Set<String>? = null,
     val priceTiers: Set<Int>? = null,
+    val visitedFilter: VisitedFilter? = null,
 )
 
 data class DebugState(
@@ -85,24 +88,33 @@ class MapViewModel @Inject constructor(
     val availableCuisines = MutableStateFlow<List<String>>(emptyList())
     val availablePrices = MutableStateFlow<List<String>>(emptyList())
 
+    val visitedRestaurantIds: StateFlow<Set<String>> = visitedRepo.visitedIds
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val restaurants: StateFlow<List<Restaurant>> = combine(bounds, filters) { b, f -> b to f }
         .flatMapLatest { (b, f) ->
-            if (b == null) return@flatMapLatest kotlinx.coroutines.flow.flowOf(emptyList())
-            repo.observeInBounds(
-                minLat = b.minLat, maxLat = b.maxLat,
-                minLon = b.minLon, maxLon = b.maxLon,
-                distinctions = f.distinctions,
-                cuisines = f.cuisines,
-                priceTiers = f.priceTiers,
-            )
+            if (b == null) return@flatMapLatest kotlinx.coroutines.flow.flowOf(emptyList<Restaurant>())
+            combine(
+                repo.observeInBounds(
+                    minLat = b.minLat, maxLat = b.maxLat,
+                    minLon = b.minLon, maxLon = b.maxLon,
+                    distinctions = f.distinctions,
+                    cuisines = f.cuisines,
+                    priceTiers = f.priceTiers,
+                ),
+                visitedRepo.visitedIds,
+            ) { list: List<Restaurant>, visitedSet: Set<String> ->
+                when (f.visitedFilter) {
+                    VisitedFilter.VISITED_ONLY   -> list.filter { it.id in visitedSet }
+                    VisitedFilter.UNVISITED_ONLY -> list.filter { it.id !in visitedSet }
+                    null                         -> list
+                }
+            }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val selectedRestaurant = MutableStateFlow<Restaurant?>(null)
-
-    val visitedIds: StateFlow<Set<String>> = visitedRepo.visitedIds
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     // Effective Foursquare API key: DataStore override → build-time key from local.properties
     val foursquareKey: StateFlow<String> = apiKeyPrefs.fsqApiKey
