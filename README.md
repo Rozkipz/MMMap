@@ -1,89 +1,137 @@
-# MMMap — MICHELIN Guide Map
+<div align="center">
+
+<img src="docs/banner.svg" alt="MMMap" width="860">
 
 [![CI](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml/badge.svg)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Rozkipz/MMMap/badges/coverage.json)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-An Android app that shows every restaurant in the MICHELIN Guide on an interactive map.
+**Browse every restaurant in the MICHELIN Guide — offline, on an interactive map.**
+
+[Download APK](https://github.com/Rozkipz/MMMap/releases/latest) · [Report a bug](https://github.com/Rozkipz/MMMap/issues) · [Request a feature](https://github.com/Rozkipz/MMMap/issues)
+
+</div>
+
+---
 
 ## Features
-- Offline-first — full dataset bundled in the APK
-- Filter by distinction (★★★ / ★★ / ★ / Bib Gourmand / Selected), cuisine, price
-- Near Me — restaurants sorted by your distance
-- Tap any pin for photos, opening hours, phone, website (via Foursquare)
-- Deep-links directly to each restaurant's MICHELIN Guide page
 
-## Tech stack
-Kotlin + Jetpack Compose · MapLibre Native · Room · Retrofit · Hilt · WorkManager
+- **Offline-first** — full MICHELIN dataset bundled in the APK, no sign-in required
+- **Filter** by award (★★★ / ★★ / ★ / Bib Gourmand / Selected), cuisine, and price tier
+- **Near Me** — list of restaurants sorted by walking distance
+- **Rich detail** — photos, opening hours, phone number, and website via Foursquare
+- **Deep links** directly to each restaurant's MICHELIN Guide page
+- **Automatic updates** — dataset syncs in the background every 24 hours
 
-## Setup
+## Screenshots
+
+> _Screenshots coming soon — contributions welcome!_
+>
+> To add screenshots, place `map.png`, `filters.png`, `detail.png`, and `nearby.png`
+> in `docs/screenshots/` and open a pull request.
+
+## Install
+
+### Download (sideload)
+1. Download `app-release.apk` from the [latest release](https://github.com/Rozkipz/MMMap/releases/latest)
+2. On your phone: **Settings → Security → Install unknown apps** → allow your browser
+3. Open the downloaded APK and tap **Install**
+
+### Build from source
+See [Development setup](#development-setup) below.
+
+---
+
+## Development setup
 
 ### Requirements
-- Android Studio Ladybug or newer
-- JDK 17 (bundled at `~/.local/jdk/jdk-17.0.19+10` on the dev machine, or set `JAVA_HOME`)
-- `just` command runner: `cargo install just` or `brew install just`
+
+| Tool | Version |
+|------|---------|
+| Android Studio | Ladybug or newer |
+| JDK | 17 |
+| [`just`](https://github.com/casey/just) | any recent |
+
+Install `just`:
+```bash
+cargo install just   # or: brew install just
+```
+
+Set `JAVA_HOME` to JDK 17 if it is not your system default:
+```bash
+export JAVA_HOME=/path/to/jdk-17
+```
 
 ### API keys
-Create `local.properties` (gitignored):
+
+Create `local.properties` (gitignored — never commit this):
 ```
 fsq.api.key=YOUR_FOURSQUARE_API_KEY
 ```
-Get a free key at https://developer.foursquare.com/
 
-### Michelin dataset
-```bash
-just fetch-michelin-data
-```
-This downloads the latest SQLite release from
-[ngshiheng/michelin-my-maps](https://github.com/ngshiheng/michelin-my-maps) (MIT licence)
-into `app/src/main/assets/michelin.db`.
+Get a free key at [developer.foursquare.com](https://developer.foursquare.com/).
+Place enrichment (photos, hours, phone) is disabled but the map works without a key.
 
-### Build & run
+### Common commands
+
 ```bash
-just build          # debug APK
+just build          # compile debug APK
 just install        # install to connected device/emulator
 just run            # install + launch
-just check          # lint + tests
+just test           # unit tests
+just coverage       # unit tests + JaCoCo coverage report
+just lint           # Android lint
+just check          # lint + tests (run before committing)
 ```
 
-## Release
+---
 
-### First time: create signing keystore
-```bash
-just setup-keystore
-```
-**Back up `mmmap-release.jks` and `keystore.properties` securely. Losing the keystore
-means users can't receive future updates from GitHub Releases / IzzyOnDroid.**
+## Contributing
 
-### Publish a release
-```bash
-just release 0.2.0
-```
-This cleans, checks, bumps version, signs the APK, creates a git tag,
-and publishes a GitHub Release with the signed APK attached.
+Contributions are welcome. Please:
 
-### Install from GitHub Releases (sideload)
-1. Download `app-release.apk` from the latest GitHub Release
-2. On your phone: Settings → Security → Install unknown apps → allow your browser
-3. Open the downloaded APK and install
+1. Open an issue first for anything beyond a small fix
+2. Fork the repo and create a feature branch (`git checkout -b feat/my-change`)
+3. Keep commits focused — one logical change per commit
+4. Run `just check` before pushing; CI enforces lint and 75% coverage on new code
+5. Open a pull request against `main`
 
-## F-Droid (Phase 2 — planned)
-All stack choices are already F-Droid-compatible. When ready:
-- Run `just fdroid-lint` to validate metadata
-- Open a PR against [fdroiddata](https://gitlab.com/fdroid/fdroiddata)
-- Register at [IzzyOnDroid](https://apt.izzysoft.de/fdroid/) for faster initial availability
+There are no CLA or sign-off requirements.
 
-> Note: the APK signed by F-Droid uses a different key from GitHub Releases.
-> Users switching repos will see an "app conflict" prompt and must uninstall/reinstall.
+---
 
-## Map tiles
-Default: [MapLibre demo tiles](https://demotiles.maplibre.org/) — fine for development,
-rate-limited in production. Replace `TILE_STYLE_URL` in `MapScreen.kt` with:
-- [Protomaps](https://protomaps.com/) — pay-once serverless tiles
-- [OpenFreeMap](https://openfreemap.org/) — free self-hosted tiles
-- Your own MapLibre tile server
+## Tech stack
 
-## Data attribution
-Restaurant data: © MICHELIN Guide, sourced via
-[ngshiheng/michelin-my-maps](https://github.com/ngshiheng/michelin-my-maps) (MIT)  
-Place enrichment: Foursquare Places API  
-Map tiles: OpenStreetMap contributors
+| Layer | Library |
+|-------|---------|
+| UI | Jetpack Compose + Material 3 |
+| Map | MapLibre Native Android |
+| Database | Room (SQLite) |
+| Networking | Retrofit + OkHttp |
+| DI | Hilt |
+| Background sync | WorkManager |
+| Place enrichment | Foursquare Places API |
+
+All dependencies are either Apache 2.0, MIT, or LGPL-licensed — fully F-Droid-compatible.
+
+---
+
+## Roadmap
+
+- [ ] F-Droid / IzzyOnDroid distribution
+- [ ] Offline tile bundles for full offline use
+- [ ] Country selector to narrow the dataset
+
+---
+
+## License
+
+This project is licensed under the **GNU General Public License v3.0** — see [`LICENSE`](LICENSE) for details.
+
+## Attribution
+
+| Source | Licence |
+|--------|---------|
+| Restaurant data: [MICHELIN Guide](https://guide.michelin.com) via [ngshiheng/michelin-my-maps](https://github.com/ngshiheng/michelin-my-maps) | MIT |
+| Place enrichment: [Foursquare Places API](https://developer.foursquare.com/) | Foursquare ToS |
+| Map tiles: [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) | ODbL |
