@@ -47,12 +47,8 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > mmmap-release.jks
-          cat > keystore.properties <<EOF
-          storeFile=mmmap-release.jks
-          storePassword=$KEYSTORE_PASSWORD
-          keyAlias=mmmap
-          keyPassword=$KEYSTORE_PASSWORD
-          EOF
+          printf 'storeFile=mmmap-release.jks\nstorePassword=%s\nkeyAlias=mmmap\nkeyPassword=%s\n' \
+            "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > keystore.properties
 
       - name: Write API keys
         env:
@@ -90,4 +86,4 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: just gh-release ${{ inputs.version }}
+        run: just gh-release ${{ inputs.version }} ${{ github.sha }}

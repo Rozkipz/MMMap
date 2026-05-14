@@ -72,16 +72,18 @@ tag version:
     git push origin v{{version}}
 
 # Create a GitHub Release and attach the signed APK
-# Uses fastlane changelog if present, otherwise falls back to empty notes
-gh-release version:
+# Pass target SHA to pin the tag to a specific commit (e.g. $GITHUB_SHA in CI)
+# Uses fastlane changelog if present, otherwise auto-generates notes from commits since last release
+gh-release version target='':
     #!/usr/bin/env bash
     set -euo pipefail
     APK="app/build/outputs/apk/release/app-release.apk"
     NOTES="fastlane/metadata/android/en-US/changelogs/$(cat .version-code 2>/dev/null || true).txt"
+    TARGET_FLAG={{ if target != '' { '"--target ' + target + '"' } else { '""' } }}
     if [[ -f "$NOTES" ]]; then
-      gh release create "v{{version}}" --title "v{{version}}" --notes-file "$NOTES" "$APK"
+      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes-file "$NOTES" "$APK"
     else
-      gh release create "v{{version}}" --title "v{{version}}" --notes "" "$APK"
+      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --generate-notes "$APK"
     fi
 
 # Full release pipeline: clean → fetch data → check → sign APK → tag → GitHub Release
