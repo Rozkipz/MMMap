@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import app.mmmap.ThemeMode
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -86,6 +87,8 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
+
+private val PRICE_TIERS = listOf(1 to "$", 2 to "$$", 3 to "$$$", 4 to "$$$$")
 
 private const val SOURCE_ID      = "restaurants-source"
 private const val LAYER_ID       = "restaurants-layer"
@@ -185,6 +188,7 @@ fun MapScreen(
     val restaurants        by viewModel.restaurants.collectAsState()
     val selectedRestaurant by viewModel.selectedRestaurant.collectAsState()
     val filters            by viewModel.filters.collectAsState()
+    val availableCuisines  by viewModel.availableCuisines.collectAsState()
     val userLatLon         by viewModel.userLatLon.collectAsState()
     val isLocating         by viewModel.isLocating.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -195,6 +199,7 @@ fun MapScreen(
     var showAbout         by remember { mutableStateOf(false) }
     var showKeyDialog     by remember { mutableStateOf(false) }
     var showDebug         by remember { mutableStateOf(false) }
+    var showCuisineSheet  by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val context = LocalContext.current
@@ -380,6 +385,41 @@ fun MapScreen(
                             ),
                         )
                     }
+                    items(PRICE_TIERS) { (tier, label) ->
+                        val tiers = filters.priceTiers
+                        FilterChip(
+                            selected = tiers != null && tier in tiers,
+                            onClick = {
+                                val newTiers = if (tiers == null) setOf(tier)
+                                              else if (tier in tiers) tiers - tier else tiers + tier
+                                viewModel.updateFilters(
+                                    filters.copy(priceTiers = if (newTiers.size == PRICE_TIERS.size) null else newTiers)
+                                )
+                            },
+                            label = { Text(label) },
+                        )
+                    }
+                    item {
+                        val activeCuisines = filters.cuisines
+                        val cuisineLabel = when {
+                            activeCuisines == null    -> "Cuisine"
+                            activeCuisines.isEmpty()  -> "Cuisine · 0"
+                            else                      -> "Cuisine · ${activeCuisines.size}"
+                        }
+                        FilterChip(
+                            selected = activeCuisines != null,
+                            onClick = { showCuisineSheet = true },
+                            label = { Text(cuisineLabel) },
+                        )
+                    }
+                    if (filters.distinction != null || filters.cuisines != null || filters.priceTiers != null) {
+                        item {
+                            AssistChip(
+                                onClick = { viewModel.updateFilters(MapFilters()) },
+                                label = { Text("Clear") },
+                            )
+                        }
+                    }
                 }
                 Box {
                     IconButton(
@@ -488,6 +528,15 @@ fun MapScreen(
     val ds = debugState
     if (showDebug && ds != null) {
         DebugInfoDialog(state = ds, onDismiss = { showDebug = false })
+    }
+
+    if (showCuisineSheet) {
+        CuisineFilterSheet(
+            availableCuisines = availableCuisines,
+            selected = filters.cuisines,
+            onChange = { viewModel.updateFilters(filters.copy(cuisines = it)) },
+            onDismiss = { showCuisineSheet = false },
+        )
     }
 }
 

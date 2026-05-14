@@ -46,8 +46,8 @@ data class MapBounds(
 
 data class MapFilters(
     val distinction: Distinction? = null,
-    val cuisine: String? = null,
-    val price: String? = null,
+    val cuisines: Set<String>? = null,
+    val priceTiers: Set<Int>? = null,
 )
 
 data class DebugState(
@@ -56,6 +56,7 @@ data class DebugState(
     val lastSyncAt: Long?,
     val lastCsvSha: String?,
     val workerState: String,
+    val nextSyncAt: Long?,
     val bounds: MapBounds?,
     val filters: MapFilters,
 )
@@ -82,8 +83,8 @@ class MapViewModel @Inject constructor(
                 minLat = b.minLat, maxLat = b.maxLat,
                 minLon = b.minLon, maxLon = b.maxLon,
                 award = f.distinction?.label,
-                cuisine = f.cuisine,
-                price = f.price,
+                cuisines = f.cuisines,
+                priceTiers = f.priceTiers,
             )
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -108,12 +109,14 @@ class MapViewModel @Inject constructor(
                     .getWorkInfosForUniqueWork(DatasetSyncWorker.TAG)
                     .get()
             }
+            val workInfo = workInfos.firstOrNull()
             debugState.value = DebugState(
                 dbRestaurantCount = repo.count(),
                 viewportCount     = restaurants.value.size,
                 lastSyncAt        = syncPrefs.lastSyncAt(),
                 lastCsvSha        = syncPrefs.lastCsvSha()?.take(8),
-                workerState       = workInfos.firstOrNull()?.state?.name ?: "none",
+                workerState       = workInfo?.state?.name ?: "none",
+                nextSyncAt        = workInfo?.nextScheduleTimeMillis?.takeIf { it != Long.MAX_VALUE },
                 bounds            = bounds.value,
                 filters           = filters.value,
             )

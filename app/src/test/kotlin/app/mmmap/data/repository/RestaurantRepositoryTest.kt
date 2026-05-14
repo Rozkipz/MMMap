@@ -26,7 +26,7 @@ class RestaurantRepositoryTest {
     // ── observeInBounds ───────────────────────────────────────────────────────
 
     @Test fun observeInBounds_mapsEntitiesToDomain() = runTest {
-        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
             listOf(entity("r1"), entity("r2"))
         )
 
@@ -38,7 +38,7 @@ class RestaurantRepositoryTest {
     }
 
     @Test fun observeInBounds_entityFieldsMappedCorrectly() = runTest {
-        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
             listOf(entity("r1", name = "Le Gavroche", award = "3 MICHELIN Stars", cuisine = "French", price = "££££"))
         )
 
@@ -50,19 +50,40 @@ class RestaurantRepositoryTest {
         assertEquals("££££", domain.price)
     }
 
-    @Test fun observeInBounds_passesAllFiltersToDao() = runTest {
-        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+    @Test fun observeInBounds_nullFilters_passesAllFlagsToDao() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
 
-        repo.observeInBounds(
-            minLat = 50.0, maxLat = 52.0, minLon = -1.0, maxLon = 1.0,
-            award = "1 Star", cuisine = "French", price = "£££",
-        ).first()
+        repo.observeInBounds(minLat = 50.0, maxLat = 52.0, minLon = -1.0, maxLon = 1.0).first()
 
-        coVerify { dao.observeInBounds(50.0, 52.0, -1.0, 1.0, "1 Star", "French", "£££") }
+        coVerify { dao.observeInBounds(50.0, 52.0, -1.0, 1.0, null, 1, any(), 1, any()) }
+    }
+
+    @Test fun observeInBounds_cuisineSet_passedToDao() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+
+        repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = setOf("French", "Italian")).first()
+
+        coVerify { dao.observeInBounds(50.0, 52.0, -1.0, 1.0, null, 0, match { it.containsAll(listOf("French", "Italian")) }, 1, any()) }
+    }
+
+    @Test fun observeInBounds_priceTierSet_passedToDao() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+
+        repo.observeInBounds(50.0, 52.0, -1.0, 1.0, priceTiers = setOf(2, 3)).first()
+
+        coVerify { dao.observeInBounds(50.0, 52.0, -1.0, 1.0, null, 1, any(), 0, match { it.containsAll(listOf(2, 3)) }) }
+    }
+
+    @Test fun observeInBounds_emptyCuisineSet_passedWithSentinel() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+
+        repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = emptySet()).first()
+
+        coVerify { dao.observeInBounds(50.0, 52.0, -1.0, 1.0, null, 0, listOf(""), 1, any()) }
     }
 
     @Test fun observeInBounds_emptyResultReturnsEmptyList() = runTest {
-        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
 
         val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0).first()
 

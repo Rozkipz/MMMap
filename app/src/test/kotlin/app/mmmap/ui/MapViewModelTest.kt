@@ -46,7 +46,7 @@ class MapViewModelTest {
         every { context.getSystemService(Context.LOCATION_SERVICE) } returns mockk<LocationManager>(relaxed = true)
         coEvery { repo.distinctCuisines() } returns listOf("French", "Japanese")
         coEvery { repo.distinctPrices() } returns listOf("£", "££", "£££")
-        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList<app.mmmap.domain.model.Restaurant>())
         every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
         vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs)
     }
@@ -66,8 +66,8 @@ class MapViewModelTest {
     @Test fun initialFiltersAllNull() {
         val f = vm.filters.value
         assertNull(f.distinction)
-        assertNull(f.cuisine)
-        assertNull(f.price)
+        assertNull(f.cuisines)
+        assertNull(f.priceTiers)
     }
 
     @Test fun availableCuisinesPopulatedOnInit() = runTest {
@@ -87,7 +87,7 @@ class MapViewModelTest {
     }
 
     @Test fun updateFiltersSetsValue() {
-        val filters = MapFilters(distinction = Distinction.THREE_STAR, cuisine = "French")
+        val filters = MapFilters(distinction = Distinction.THREE_STAR, cuisines = setOf("French"))
         vm.updateFilters(filters)
         assertEquals(filters, vm.filters.value)
     }
@@ -142,10 +142,10 @@ class MapViewModelTest {
         val job = vm.restaurants.launchIn(this)
 
         vm.updateBounds(MapBounds(50.0, 52.0, -1.0, 1.0))
-        vm.updateFilters(MapFilters(cuisine = "French"))
+        vm.updateFilters(MapFilters(cuisines = setOf("French")))
         advanceUntilIdle()
 
-        verify { repo.observeInBounds(50.0, 52.0, -1.0, 1.0, null, "French", null) }
+        verify { repo.observeInBounds(50.0, 52.0, -1.0, 1.0, null, setOf("French"), null) }
         job.cancel()
     }
 

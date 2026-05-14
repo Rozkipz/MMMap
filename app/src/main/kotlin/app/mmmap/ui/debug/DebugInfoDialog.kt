@@ -41,6 +41,7 @@ fun DebugInfoDialog(state: DebugState, onDismiss: () -> Unit) {
                 Section("Sync")
                 DiagRow("Worker", state.workerState)
                 DiagRow("Last sync", state.lastSyncAt?.let { formatTime(it) } ?: "never")
+                DiagRow("Next sync", formatNextSync(state.workerState, state.nextSyncAt))
                 DiagRow("CSV SHA", state.lastCsvSha ?: "none")
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -55,8 +56,16 @@ fun DebugInfoDialog(state: DebugState, onDismiss: () -> Unit) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Section("Filters")
                 DiagRow("Distinction", state.filters.distinction?.label ?: "none")
-                DiagRow("Cuisine", state.filters.cuisine ?: "none")
-                DiagRow("Price", state.filters.price ?: "none")
+                DiagRow("Cuisines", when {
+                    state.filters.cuisines == null      -> "all"
+                    state.filters.cuisines.isEmpty()    -> "none (0)"
+                    else -> "${state.filters.cuisines.size} selected"
+                })
+                DiagRow("Price tiers", when {
+                    state.filters.priceTiers == null    -> "all"
+                    state.filters.priceTiers.isEmpty()  -> "none (0)"
+                    else -> state.filters.priceTiers.sorted().joinToString { "${"$".repeat(it)}" }
+                })
             }
         },
         confirmButton = {
@@ -100,6 +109,23 @@ private fun InfoRow(text: String) {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+private fun formatNextSync(workerState: String, nextSyncAt: Long?): String {
+    if (nextSyncAt != null) {
+        val diff = nextSyncAt - System.currentTimeMillis()
+        return when {
+            diff <= 0             -> "imminent"
+            diff < 60_000L        -> "in <1m"
+            diff < 3_600_000L     -> "in ${diff / 60_000}m"
+            else -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(nextSyncAt))
+        }
+    }
+    return when (workerState) {
+        "RUNNING"  -> "running"
+        "ENQUEUED" -> "pending"
+        else       -> "next launch"
+    }
 }
 
 private fun formatTime(epochMs: Long): String {
