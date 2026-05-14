@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 val MichelinRed  = Color(0xFFE2001A)
 val StarGold     = Color(0xFFFFB400)
 val TwoStarViolet = Color(0xFF7B1FA2)
-val OneStarRed   = Color(0xFFE2231A)
+val OneStarCyan  = Color(0xFF00BCD4)
 val BibGreen     = Color(0xFF00AA66)
 val BibBrown     = Color(0xFF8B4513)
 val SelectedBlue = Color(0xFF1565C0)

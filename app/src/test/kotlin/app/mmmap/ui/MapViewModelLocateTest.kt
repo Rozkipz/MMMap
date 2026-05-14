@@ -12,6 +12,7 @@ import androidx.work.WorkManager
 import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.prefs.MapCachePreferences
 import app.mmmap.data.repository.RestaurantRepository
+import app.mmmap.data.repository.VisitedRepository
 import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.map.TileCacheManager
 import app.mmmap.ui.map.MapViewModel
@@ -52,6 +53,9 @@ class MapViewModelLocateTest {
     private val syncPrefs = mockk<SyncPreferences>(relaxed = true)
     private val tileCacheManager = mockk<TileCacheManager>(relaxed = true)
     private val workManager = mockk<WorkManager>(relaxed = true)
+    private val visitedRepo = mockk<VisitedRepository>(relaxed = true) {
+        every { visitedIds } returns flowOf(emptySet())
+    }
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
@@ -68,7 +72,7 @@ class MapViewModelLocateTest {
         every { Looper.getMainLooper() } returns mockk(relaxed = true)
         every { locationManager.isProviderEnabled(any()) } returns true
         every { locationManager.getLastKnownLocation(any()) } returns null
-        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager)
+        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
     }
 
     @After fun tearDown() {

@@ -4,7 +4,8 @@ import androidx.compose.ui.graphics.Color
 import app.mmmap.domain.model.Distinction
 import app.mmmap.ui.theme.BibBrown
 import app.mmmap.ui.theme.BibGreen
-import app.mmmap.ui.theme.OneStarRed
+import app.mmmap.ui.theme.MichelinRed
+import app.mmmap.ui.theme.OneStarCyan
 import app.mmmap.ui.theme.SelectedBlue
 import app.mmmap.ui.theme.StarGold
 import app.mmmap.ui.theme.TwoStarViolet
@@ -26,9 +27,9 @@ fun Distinction.chipLabel() = when (this) {
 }
 
 fun Distinction.dotColor(): Color = when (this) {
-    Distinction.THREE_STAR   -> StarGold
+    Distinction.THREE_STAR   -> MichelinRed
     Distinction.TWO_STAR     -> TwoStarViolet
-    Distinction.ONE_STAR     -> OneStarRed
+    Distinction.ONE_STAR     -> OneStarCyan
     Distinction.BIB_GOURMAND -> BibGreen
     Distinction.SELECTED     -> SelectedBlue
 }

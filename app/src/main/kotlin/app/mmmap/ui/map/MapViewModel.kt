@@ -21,6 +21,7 @@ import androidx.work.WorkManager
 import app.mmmap.BuildConfig
 import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.repository.RestaurantRepository
+import app.mmmap.data.repository.VisitedRepository
 import app.mmmap.data.sync.DatasetSyncWorker
 import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.domain.model.Distinction
@@ -75,6 +76,7 @@ class MapViewModel @Inject constructor(
     private val syncPrefs: SyncPreferences,
     private val tileCacheManager: TileCacheManager,
     private val workManager: WorkManager,
+    private val visitedRepo: VisitedRepository,
 ) : ViewModel() {
 
     val bounds = MutableStateFlow<MapBounds?>(null)
@@ -98,6 +100,9 @@ class MapViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val selectedRestaurant = MutableStateFlow<Restaurant?>(null)
+
+    val visitedIds: StateFlow<Set<String>> = visitedRepo.visitedIds
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     // Effective Foursquare API key: DataStore override → build-time key from local.properties
     val foursquareKey: StateFlow<String> = apiKeyPrefs.fsqApiKey

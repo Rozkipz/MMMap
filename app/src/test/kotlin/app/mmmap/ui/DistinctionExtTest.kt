@@ -3,7 +3,8 @@ package app.mmmap.ui
 import app.mmmap.domain.model.Distinction
 import app.mmmap.ui.theme.BibBrown
 import app.mmmap.ui.theme.BibGreen
-import app.mmmap.ui.theme.OneStarRed
+import app.mmmap.ui.theme.MichelinRed
+import app.mmmap.ui.theme.OneStarCyan
 import app.mmmap.ui.theme.SelectedBlue
 import app.mmmap.ui.theme.StarGold
 import app.mmmap.ui.theme.TwoStarViolet
@@ -30,9 +31,9 @@ class DistinctionExtTest {
 
     // ── dotColor ──────────────────────────────────────────────────────────────
 
-    @Test fun dotColor_threeStar()   = assertEquals(StarGold,      Distinction.THREE_STAR.dotColor())
+    @Test fun dotColor_threeStar()   = assertEquals(MichelinRed,   Distinction.THREE_STAR.dotColor())
     @Test fun dotColor_twoStar()     = assertEquals(TwoStarViolet, Distinction.TWO_STAR.dotColor())
-    @Test fun dotColor_oneStar()     = assertEquals(OneStarRed,    Distinction.ONE_STAR.dotColor())
+    @Test fun dotColor_oneStar()     = assertEquals(OneStarCyan,   Distinction.ONE_STAR.dotColor())
     @Test fun dotColor_bibGourmand() = assertEquals(BibGreen,      Distinction.BIB_GOURMAND.dotColor())
     @Test fun dotColor_selected()    = assertEquals(SelectedBlue,  Distinction.SELECTED.dotColor())
 
