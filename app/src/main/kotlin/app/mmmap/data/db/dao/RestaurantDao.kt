@@ -21,8 +21,7 @@ interface RestaurantDao {
         WHERE latitude BETWEEN :minLat AND :maxLat
           AND longitude BETWEEN :minLon AND :maxLon
           AND (:award IS NULL OR award = :award)
-          AND (:cuisine IS NULL OR cuisine = :cuisine)
-          AND (:price IS NULL OR price = :price)
+          AND (:tiersAll = 1 OR LENGTH(price) IN (:priceTiers))
         ORDER BY name ASC
     """)
     fun observeInBounds(
@@ -31,8 +30,8 @@ interface RestaurantDao {
         minLon: Double,
         maxLon: Double,
         award: String?,
-        cuisine: String?,
-        price: String?,
+        tiersAll: Int,
+        priceTiers: List<Int>,
     ): Flow<List<RestaurantEntity>>
 
     @Query("SELECT * FROM restaurant WHERE id = :id")

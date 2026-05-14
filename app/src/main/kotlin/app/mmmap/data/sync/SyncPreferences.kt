@@ -25,4 +25,8 @@ class SyncPreferences @Inject constructor(
             it[keySyncAt] = System.currentTimeMillis()
         }
     }
+
+    suspend fun clearSha() {
+        dataStore.edit { it.remove(keySha) }
+    }
 }
