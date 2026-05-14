@@ -68,7 +68,7 @@ class MapViewModelTest {
 
     @Test fun initialFiltersAllNull() {
         val f = vm.filters.value
-        assertNull(f.distinction)
+        assertNull(f.distinctions)
         assertNull(f.cuisines)
         assertNull(f.priceTiers)
     }
@@ -90,7 +90,7 @@ class MapViewModelTest {
     }
 
     @Test fun updateFiltersSetsValue() {
-        val filters = MapFilters(distinction = Distinction.THREE_STAR, cuisines = setOf("French"))
+        val filters = MapFilters(distinctions = setOf(Distinction.THREE_STAR), cuisines = setOf("French"))
         vm.updateFilters(filters)
         assertEquals(filters, vm.filters.value)
     }
@@ -134,10 +134,10 @@ class MapViewModelTest {
         val job = vm.restaurants.launchIn(this)
 
         vm.updateBounds(MapBounds(50.0, 52.0, -1.0, 1.0))
-        vm.updateFilters(MapFilters(distinction = Distinction.ONE_STAR))
+        vm.updateFilters(MapFilters(distinctions = setOf(Distinction.ONE_STAR)))
         advanceUntilIdle()
 
-        verify { repo.observeInBounds(50.0, 52.0, -1.0, 1.0, "1 Star", null, null) }
+        verify { repo.observeInBounds(50.0, 52.0, -1.0, 1.0, setOf(Distinction.ONE_STAR), null, null) }
         job.cancel()
     }
 

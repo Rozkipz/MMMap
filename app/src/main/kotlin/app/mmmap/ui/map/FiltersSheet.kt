@@ -56,7 +56,7 @@ fun FiltersSheet(
     val displayCuisines = if (cuisineQuery.isBlank()) availableCuisines
                           else availableCuisines.filter { it.contains(cuisineQuery, ignoreCase = true) }
     val allCuisinesSelected = filters.cuisines == null
-    val anyActive = filters.distinction != null || filters.cuisines != null || filters.priceTiers != null
+    val anyActive = filters.distinctions != null || filters.cuisines != null || filters.priceTiers != null
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
@@ -69,11 +69,14 @@ fun FiltersSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Distinction.entries.forEach { d ->
+                        val distinctions = filters.distinctions
                         FilterChip(
-                            selected = filters.distinction == d,
+                            selected = distinctions != null && d in distinctions,
                             onClick = {
+                                val newSet = if (distinctions == null) setOf(d)
+                                             else if (d in distinctions) distinctions - d else distinctions + d
                                 onFiltersChange(filters.copy(
-                                    distinction = if (filters.distinction == d) null else d
+                                    distinctions = if (newSet.isEmpty() || newSet.size == Distinction.entries.size) null else newSet,
                                 ))
                             },
                             label = { Text(d.chipLabel()) },
