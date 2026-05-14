@@ -210,6 +210,39 @@ class RestaurantRepositoryTest {
         assertEquals(listOf("£", "££", "£££"), repo.distinctPrices())
     }
 
+    @Test fun distinctCuisines_filtersBlankSegmentsFromCompoundStrings() = runTest {
+        // e.g. a raw value like ", French" after split gives "" and "French"
+        coEvery { dao.distinctCuisines() } returns listOf(" , French", "Japanese")
+
+        val result = repo.distinctCuisines()
+
+        // Blank segment after trim should be excluded
+        assertEquals(listOf("French", "Japanese"), result)
+    }
+
+    // ── filterByCuisines whitespace edge cases ────────────────────────────────
+
+    @Test fun cuisineFilter_matchesAfterTrimOnRestaurantField() = runTest {
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+            listOf(entity("r1", cuisine = " French "))
+        )
+
+        val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = setOf("French")).first()
+
+        assertEquals(1, result.size)
+    }
+
+    @Test fun cuisineFilter_whitespaceOnlySegmentNotMatchedAsTag() = runTest {
+        // Cuisine "  ,  " splits into blank segments only — should not match any tag
+        coEvery { dao.observeInBounds(any(), any(), any(), any(), any(), any(), any(), any()) } returns flowOf(
+            listOf(entity("r1", cuisine = "  ,  "))
+        )
+
+        val result = repo.observeInBounds(50.0, 52.0, -1.0, 1.0, cuisines = setOf("French")).first()
+
+        assertEquals(0, result.size)
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private fun entity(
