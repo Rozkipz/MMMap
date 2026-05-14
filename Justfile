@@ -55,9 +55,12 @@ fetch-michelin-data:
 
 # ─── Release ──────────────────────────────────────────────────────────────────
 
-# Build a signed release APK (run `just setup-keystore` first if needed)
-assemble-release:
-    {{gradle}} assembleRelease
+# Build a signed release APK; optionally override version name and code
+# e.g. `just assemble-release 1.2.3 10203`  or plain `just assemble-release`
+assemble-release version='' code='':
+    {{gradle}} assembleRelease \
+        {{ if version != '' { "-PversionName=" + version } else { "" } }} \
+        {{ if code != '' { "-PversionCode=" + code } else { "" } }}
 
 # Bump versionName/versionCode — part is patch (default), minor, or major
 bump part="patch":
@@ -68,16 +71,18 @@ tag version:
     git tag -s v{{version}} -m "Release v{{version}}"
     git push origin v{{version}}
 
-# Create a GitHub Release and attach the signed APK (reads notes from fastlane/metadata/…/changelogs/)
+# Create a GitHub Release and attach the signed APK
+# Uses fastlane changelog if present, otherwise falls back to empty notes
 gh-release version:
     #!/usr/bin/env bash
     set -euo pipefail
-    NOTES="fastlane/metadata/android/en-US/changelogs/$(cat .version-code 2>/dev/null || echo 1).txt"
     APK="app/build/outputs/apk/release/app-release.apk"
-    gh release create "v{{version}}" \
-      --title "v{{version}}" \
-      --notes-file "$NOTES" \
-      "$APK"
+    NOTES="fastlane/metadata/android/en-US/changelogs/$(cat .version-code 2>/dev/null || true).txt"
+    if [[ -f "$NOTES" ]]; then
+      gh release create "v{{version}}" --title "v{{version}}" --notes-file "$NOTES" "$APK"
+    else
+      gh release create "v{{version}}" --title "v{{version}}" --notes "" "$APK"
+    fi
 
 # Full release pipeline: clean → fetch data → check → sign APK → tag → GitHub Release
 release version:
