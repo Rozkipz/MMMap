@@ -13,6 +13,10 @@ import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import app.mmmap.BuildConfig
 import app.mmmap.data.prefs.ApiKeyPreferences
@@ -33,8 +37,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 private const val LOCATE_TIMEOUT_MS = 60_000L
@@ -119,6 +125,20 @@ class MapViewModel @Inject constructor(
                 nextSyncAt        = workInfo?.nextScheduleTimeMillis?.takeIf { it != Long.MAX_VALUE },
                 bounds            = bounds.value,
                 filters           = filters.value,
+            )
+        }
+    }
+
+    fun forceRefresh() {
+        viewModelScope.launch(Dispatchers.IO) {
+            syncPrefs.clearSha()
+            val request = PeriodicWorkRequestBuilder<DatasetSyncWorker>(1, TimeUnit.DAYS)
+                .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
+                .build()
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                DatasetSyncWorker.TAG,
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
+                request,
             )
         }
     }

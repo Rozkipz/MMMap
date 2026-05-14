@@ -22,7 +22,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun DebugInfoDialog(state: DebugState, onDismiss: () -> Unit) {
+fun DebugInfoDialog(state: DebugState, onDismiss: () -> Unit, onForceRefresh: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("App Diagnostics") },
@@ -70,6 +70,9 @@ fun DebugInfoDialog(state: DebugState, onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        dismissButton = {
+            TextButton(onClick = { onForceRefresh(); onDismiss() }) { Text("Force refresh") }
         },
     )
 }

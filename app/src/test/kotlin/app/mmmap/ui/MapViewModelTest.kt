@@ -46,7 +46,7 @@ class MapViewModelTest {
         every { context.getSystemService(Context.LOCATION_SERVICE) } returns mockk<LocationManager>(relaxed = true)
         coEvery { repo.distinctCuisines() } returns listOf("French", "Japanese")
         coEvery { repo.distinctPrices() } returns listOf("£", "££", "£££")
-        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList<app.mmmap.domain.model.Restaurant>())
+        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
         every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
         vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs)
     }
@@ -146,6 +146,17 @@ class MapViewModelTest {
         advanceUntilIdle()
 
         verify { repo.observeInBounds(50.0, 52.0, -1.0, 1.0, null, setOf("French"), null) }
+        job.cancel()
+    }
+
+    @Test fun filterPriceTiersPassedToRepo() = runTest {
+        val job = vm.restaurants.launchIn(this)
+
+        vm.updateBounds(MapBounds(50.0, 52.0, -1.0, 1.0))
+        vm.updateFilters(MapFilters(priceTiers = setOf(2, 3)))
+        advanceUntilIdle()
+
+        verify { repo.observeInBounds(50.0, 52.0, -1.0, 1.0, null, null, setOf(2, 3)) }
         job.cancel()
     }
 

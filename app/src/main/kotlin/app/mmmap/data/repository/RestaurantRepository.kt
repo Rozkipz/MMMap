@@ -21,17 +21,28 @@ class RestaurantRepository @Inject constructor(
         minLat = minLat, maxLat = maxLat,
         minLon = minLon, maxLon = maxLon,
         award = award,
-        cuisinesAll = if (cuisines == null) 1 else 0,
-        cuisines    = cuisines?.toList().orEmpty().ifEmpty { listOf("") },
-        tiersAll    = if (priceTiers == null) 1 else 0,
-        priceTiers  = priceTiers?.toList().orEmpty().ifEmpty { listOf(0) },
-    ).map { list -> list.map { it.toDomain() } }
+        tiersAll   = if (priceTiers == null) 1 else 0,
+        priceTiers = priceTiers?.toList().orEmpty().ifEmpty { listOf(0) },
+    ).map { list ->
+        list.map { it.toDomain() }.filterByCuisines(cuisines)
+    }
 
     suspend fun getById(id: String): Restaurant? = dao.getById(id)?.toDomain()
 
     suspend fun count(): Int = dao.count()
 
     suspend fun distinctCuisines(): List<String> = dao.distinctCuisines()
+        .flatMap { raw -> raw.split(",").map { it.trim() }.filter { it.isNotEmpty() } }
+        .toSortedSet()
+        .toList()
 
     suspend fun distinctPrices(): List<String> = dao.distinctPrices()
+}
+
+private fun List<Restaurant>.filterByCuisines(cuisines: Set<String>?): List<Restaurant> {
+    if (cuisines == null) return this
+    if (cuisines.isEmpty()) return emptyList()
+    return filter { r ->
+        r.cuisine?.split(",")?.any { it.trim() in cuisines } ?: false
+    }
 }

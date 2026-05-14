@@ -21,7 +21,6 @@ interface RestaurantDao {
         WHERE latitude BETWEEN :minLat AND :maxLat
           AND longitude BETWEEN :minLon AND :maxLon
           AND (:award IS NULL OR award = :award)
-          AND (:cuisinesAll = 1 OR cuisine IN (:cuisines))
           AND (:tiersAll = 1 OR LENGTH(price) IN (:priceTiers))
         ORDER BY name ASC
     """)
@@ -31,8 +30,6 @@ interface RestaurantDao {
         minLon: Double,
         maxLon: Double,
         award: String?,
-        cuisinesAll: Int,
-        cuisines: List<String>,
         tiersAll: Int,
         priceTiers: List<Int>,
     ): Flow<List<RestaurantEntity>>

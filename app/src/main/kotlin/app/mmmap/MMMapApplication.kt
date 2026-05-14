@@ -4,11 +4,12 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.Constraints
-import androidx.work.ExistingWorkPolicy
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import app.mmmap.data.sync.DatasetSyncWorker
+import java.util.concurrent.TimeUnit
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -28,12 +29,12 @@ class MMMapApplication : Application(), Configuration.Provider {
     }
 
     private fun enqueueSyncIfNeeded() {
-        val request = OneTimeWorkRequestBuilder<DatasetSyncWorker>()
+        val request = PeriodicWorkRequestBuilder<DatasetSyncWorker>(1, TimeUnit.DAYS)
             .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
             .build()
-        WorkManager.getInstance(this).enqueueUniqueWork(
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             DatasetSyncWorker.TAG,
-            ExistingWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.KEEP,
             request,
         )
     }
