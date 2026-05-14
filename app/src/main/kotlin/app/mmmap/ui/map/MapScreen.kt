@@ -360,10 +360,10 @@ fun MapScreen(
                     .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val anyFilterActive = filters.distinction != null ||
+                val anyFilterActive = filters.distinctions != null ||
                         filters.cuisines != null || filters.priceTiers != null
                 val activeCount = listOfNotNull(
-                    filters.distinction,
+                    filters.distinctions?.takeIf { it.isNotEmpty() },
                     filters.priceTiers?.takeIf { it.isNotEmpty() },
                     filters.cuisines?.takeIf { it.isNotEmpty() },
                 ).size

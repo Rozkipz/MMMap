@@ -51,7 +51,7 @@ data class MapBounds(
 )
 
 data class MapFilters(
-    val distinction: Distinction? = null,
+    val distinctions: Set<Distinction>? = null,
     val cuisines: Set<String>? = null,
     val priceTiers: Set<Int>? = null,
 )
@@ -88,7 +88,7 @@ class MapViewModel @Inject constructor(
             repo.observeInBounds(
                 minLat = b.minLat, maxLat = b.maxLat,
                 minLon = b.minLon, maxLon = b.maxLon,
-                award = f.distinction?.label,
+                distinctions = f.distinctions,
                 cuisines = f.cuisines,
                 priceTiers = f.priceTiers,
             )

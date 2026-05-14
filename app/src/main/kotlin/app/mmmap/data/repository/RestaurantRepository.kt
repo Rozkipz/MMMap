@@ -1,6 +1,7 @@
 package app.mmmap.data.repository
 
 import app.mmmap.data.db.dao.RestaurantDao
+import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -14,13 +15,14 @@ class RestaurantRepository @Inject constructor(
     fun observeInBounds(
         minLat: Double, maxLat: Double,
         minLon: Double, maxLon: Double,
-        award: String? = null,
+        distinctions: Set<Distinction>? = null,
         cuisines: Set<String>? = null,
         priceTiers: Set<Int>? = null,
     ): Flow<List<Restaurant>> = dao.observeInBounds(
         minLat = minLat, maxLat = maxLat,
         minLon = minLon, maxLon = maxLon,
-        award = award,
+        awardsAll  = if (distinctions == null) 1 else 0,
+        awards     = distinctions?.map { it.label }.orEmpty().ifEmpty { listOf("") },
         tiersAll   = if (priceTiers == null) 1 else 0,
         priceTiers = priceTiers?.toList().orEmpty().ifEmpty { listOf(0) },
     ).map { list ->

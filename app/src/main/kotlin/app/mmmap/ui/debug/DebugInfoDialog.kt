@@ -55,7 +55,10 @@ fun DebugInfoDialog(state: DebugState, onDismiss: () -> Unit, onForceRefresh: ()
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Section("Filters")
-                DiagRow("Distinction", state.filters.distinction?.label ?: "none")
+                DiagRow("Distinctions", when {
+                    state.filters.distinctions == null   -> "all"
+                    else -> state.filters.distinctions.joinToString { it.label }
+                })
                 DiagRow("Cuisines", when {
                     state.filters.cuisines == null      -> "all"
                     state.filters.cuisines.isEmpty()    -> "none (0)"
