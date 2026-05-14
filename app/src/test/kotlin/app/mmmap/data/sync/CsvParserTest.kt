@@ -98,6 +98,29 @@ class CsvParserTest {
         assertTrue(!entities[1].greenStar)
     }
 
+    @Test fun shortRowSkipped() {
+        val csv = """
+            Name,Address,Location,Price,Cuisine,Longitude,Latitude,PhoneNumber,Url,WebsiteUrl,Award,GreenStar
+            TooFew,addr,,,,2.0,48.0,,https://guide.michelin.com/r,,1 Star,False
+        """.trimIndent()
+        assertTrue(DatasetSyncWorker.parseCsv(reader(csv)).isEmpty())
+    }
+
+    @Test fun emptyBodyNoRecords() {
+        val csv = "Name,Address,Location,Price,Cuisine,Longitude,Latitude,PhoneNumber,Url,WebsiteUrl,Award,GreenStar,FacilitiesAndServices,Description"
+        assertTrue(DatasetSyncWorker.parseCsv(reader(csv)).isEmpty())
+    }
+
+    @Test fun facilitiesAndServicesPreserved() {
+        val csv = """
+            Name,Address,Location,Price,Cuisine,Longitude,Latitude,PhoneNumber,Url,WebsiteUrl,Award,GreenStar,FacilitiesAndServices,Description
+            Test,1 Rue,Paris,$$,French,2.3,48.8,,https://guide.michelin.com/t,,1 MICHELIN Star,False,"Air conditioning, Valet",Great
+        """.trimIndent()
+        val entities = DatasetSyncWorker.parseCsv(reader(csv))
+        assertEquals(1, entities.size)
+        assertEquals("Air conditioning, Valet", entities[0].facilitiesAndServices)
+    }
+
     @Test fun sha256PrefixIsStable() {
         val id = DatasetSyncWorker.sha256Prefix("https://guide.michelin.com/en/ile-de-france/paris/restaurant/le-meurice")
         assertEquals(16, id.length)

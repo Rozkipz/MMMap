@@ -7,10 +7,12 @@ import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
+import app.mmmap.ui.map.DebugState
 import app.mmmap.ui.map.MapBounds
 import app.mmmap.ui.map.MapFilters
 import app.mmmap.ui.map.MapViewModel
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -26,6 +28,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -157,6 +160,62 @@ class MapViewModelTest {
         advanceUntilIdle()
 
         verify { repo.observeInBounds(50.0, 52.0, -1.0, 1.0, null, null, setOf(2, 3)) }
+        job.cancel()
+    }
+
+    @Test fun debugStateNullOnInit() {
+        assertNull(vm.debugState.value)
+    }
+
+    @Test fun hasZoomedToUserOnce_defaultsFalse() {
+        assertFalse(vm.hasZoomedToUserOnce)
+    }
+
+    @Test fun hasZoomedToUserOnce_canBeSetTrue() {
+        vm.hasZoomedToUserOnce = true
+        assertTrue(vm.hasZoomedToUserOnce)
+    }
+
+    @Test fun saveLastCamera_storesPosition() {
+        vm.saveLastCamera(51.5, -0.1, 12.0)
+        assertEquals(Triple(51.5, -0.1, 12.0), vm.lastCameraPosition)
+    }
+
+    @Test fun lastCameraPosition_nullOnInit() {
+        assertNull(vm.lastCameraPosition)
+    }
+
+    @Test fun saveFoursquareKey_delegatesToPrefs() = runTest {
+        vm.saveFoursquareKey("my-api-key")
+        advanceUntilIdle()
+        coVerify { apiKeyPrefs.setFsqApiKey("my-api-key") }
+    }
+
+    @Test fun debugStateDataClassEquality() {
+        val bounds = MapBounds(1.0, 2.0, 3.0, 4.0)
+        val filters = MapFilters()
+        val state1 = DebugState(
+            dbRestaurantCount = 100,
+            viewportCount = 5,
+            lastSyncAt = 1_000L,
+            lastCsvSha = "abc12345",
+            workerState = "RUNNING",
+            nextSyncAt = 2_000L,
+            bounds = bounds,
+            filters = filters,
+        )
+        val state2 = state1.copy()
+        assertEquals(state1, state2)
+        assertEquals(state1.dbRestaurantCount, 100)
+        assertEquals(state1.workerState, "RUNNING")
+        assertEquals(state1.lastCsvSha, "abc12345")
+    }
+
+    @Test fun foursquareKey_defaultsToBuildConfig() = runTest {
+        val keys = mutableListOf<String>()
+        val job = vm.foursquareKey.onEach { keys.add(it) }.launchIn(this)
+        advanceUntilIdle()
+        assertTrue(keys.isNotEmpty())
         job.cancel()
     }
 

@@ -206,6 +206,41 @@ class MapViewModelLocateTest {
         assertEquals(51.5 to -0.1, vm.userLatLon.value)
     }
 
+    @Test fun onProviderDisabled_doesNotChangeSpinner() {
+        val slot = slot<LocationListener>()
+        every {
+            locationManager.requestLocationUpdates(any(), any<Long>(), any<Float>(), capture(slot), any())
+        } just Runs
+
+        vm.locateUser()
+        assertTrue(vm.isLocating.value)
+
+        slot.captured.onProviderDisabled("gps")
+        assertTrue(vm.isLocating.value)
+    }
+
+    @Test fun onProviderEnabled_doesNotChangeSpinner() {
+        val slot = slot<LocationListener>()
+        every {
+            locationManager.requestLocationUpdates(any(), any<Long>(), any<Float>(), capture(slot), any())
+        } just Runs
+
+        vm.locateUser()
+        assertTrue(vm.isLocating.value)
+
+        slot.captured.onProviderEnabled("gps")
+        assertTrue(vm.isLocating.value)
+    }
+
+    @Test fun coarseOnlyPermission_proceeds() {
+        every { ContextCompat.checkSelfPermission(any(), android.Manifest.permission.ACCESS_FINE_LOCATION) } returns PackageManager.PERMISSION_DENIED
+        every { ContextCompat.checkSelfPermission(any(), android.Manifest.permission.ACCESS_COARSE_LOCATION) } returns PackageManager.PERMISSION_GRANTED
+
+        vm.locateUser()
+
+        assertTrue(vm.isLocating.value)
+    }
+
     // --- helpers ---
 
     private fun fakeLocation(lat: Double, lon: Double, time: Long = System.currentTimeMillis()) =

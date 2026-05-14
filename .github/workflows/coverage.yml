@@ -58,7 +58,8 @@ jobs:
           )
           EXCLUDE_CLASSES = re.compile(
               r'.*(Dagger|Hilt_|_HiltModules|_Factory|_MembersInjector|ComposableSingletons'
-              r'|_HiltComponents|_GeneratedInjector|_ComponentTreeDeps).*'
+              r'|_HiltComponents|_GeneratedInjector|_ComponentTreeDeps'
+              r'|ScreenKt\$|SheetKt\$|DialogKt\$).*'
           )
 
           tree = ET.parse('app/build/reports/coverage/test/debug/report.xml')

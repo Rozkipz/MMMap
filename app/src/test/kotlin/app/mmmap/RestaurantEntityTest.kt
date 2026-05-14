@@ -56,6 +56,21 @@ class RestaurantEntityTest {
 
     @Test fun nullFacilitiesPreserved() = assertNull(entity().toDomain().facilitiesAndServices)
 
+    @Test fun addressPreserved() =
+        assertEquals("1 Test St", entity().toDomain().address)
+
+    @Test fun locationPreserved() =
+        assertEquals("Mayfair", entity().toDomain().location)
+
+    @Test fun phoneNumberPreserved() =
+        assertEquals("+44 20 0000 0000", entity().toDomain().phoneNumber)
+
+    @Test fun websiteUrlPreserved() =
+        assertEquals("https://testrestaurant.com", entity().toDomain().websiteUrl)
+
+    @Test fun descriptionPreserved() =
+        assertEquals("A fine establishment", entity().toDomain().description)
+
     @Test fun michelinUrlMappedFromUrl() =
         assertEquals("https://guide.michelin.com/test", entity().toDomain().michelinUrl)
 }
