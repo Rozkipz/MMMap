@@ -3,8 +3,10 @@ package app.mmmap.ui
 import android.content.Context
 import android.location.LocationManager
 import app.mmmap.data.prefs.ApiKeyPreferences
+import app.mmmap.data.prefs.MapCachePreferences
 import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.sync.SyncPreferences
+import app.mmmap.map.TileCacheManager
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.map.DebugState
@@ -42,6 +44,7 @@ class MapViewModelTest {
     private val context: Context = mockk(relaxed = true)
     private val apiKeyPrefs: ApiKeyPreferences = mockk(relaxed = true)
     private val syncPrefs: SyncPreferences = mockk(relaxed = true)
+    private val tileCacheManager: TileCacheManager = mockk(relaxed = true)
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
@@ -51,7 +54,8 @@ class MapViewModelTest {
         coEvery { repo.distinctPrices() } returns listOf("£", "££", "£££")
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
         every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
-        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs)
+        every { tileCacheManager.maxSizeMb } returns flowOf(MapCachePreferences.DEFAULT_CACHE_MB)
+        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager)
     }
 
     @After fun tearDown() {

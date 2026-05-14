@@ -25,6 +25,7 @@ import app.mmmap.data.sync.DatasetSyncWorker
 import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
+import app.mmmap.map.TileCacheManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -73,6 +74,7 @@ class MapViewModel @Inject constructor(
     private val repo: RestaurantRepository,
     private val apiKeyPrefs: ApiKeyPreferences,
     private val syncPrefs: SyncPreferences,
+    private val tileCacheManager: TileCacheManager,
 ) : ViewModel() {
 
     val bounds = MutableStateFlow<MapBounds?>(null)
@@ -104,6 +106,17 @@ class MapViewModel @Inject constructor(
 
     fun saveFoursquareKey(key: String) {
         viewModelScope.launch { apiKeyPrefs.setFsqApiKey(key) }
+    }
+
+    val cacheSizeMb: StateFlow<Long> = tileCacheManager.maxSizeMb
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 100L)
+
+    fun setCacheSizeMb(mb: Long) {
+        viewModelScope.launch { tileCacheManager.setMaxSizeMb(mb) }
+    }
+
+    fun clearTileCache() {
+        viewModelScope.launch { tileCacheManager.clearAmbientCache() }
     }
 
     val debugState = MutableStateFlow<DebugState?>(null)

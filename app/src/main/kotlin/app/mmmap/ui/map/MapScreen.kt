@@ -52,6 +52,7 @@ import androidx.compose.ui.Alignment
 import app.mmmap.ui.about.AboutDialog
 import app.mmmap.ui.debug.DebugInfoDialog
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -67,6 +68,7 @@ import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.detail.RestaurantSheet
 import app.mmmap.ui.dotColor
+import app.mmmap.ui.settings.CacheSettingsDialog
 import app.mmmap.ui.settings.FoursquareKeyDialog
 import app.mmmap.ui.theme.UserGrey
 import kotlinx.coroutines.launch
@@ -189,10 +191,12 @@ fun MapScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope = rememberCoroutineScope()
     val foursquareKey     by viewModel.foursquareKey.collectAsState()
+    val cacheSizeMb       by viewModel.cacheSizeMb.collectAsState()
     val debugState        by viewModel.debugState.collectAsState()
     var menuExpanded      by remember { mutableStateOf(false) }
     var showAbout         by remember { mutableStateOf(false) }
     var showKeyDialog     by remember { mutableStateOf(false) }
+    var showCacheDialog   by remember { mutableStateOf(false) }
     var showDebug         by remember { mutableStateOf(false) }
     var showFiltersSheet  by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -404,6 +408,11 @@ fun MapScreen(
                             onClick = { showKeyDialog = true; menuExpanded = false },
                         )
                         DropdownMenuItem(
+                            text = { Text("Map cache") },
+                            leadingIcon = { Icon(Icons.Default.Storage, contentDescription = null) },
+                            onClick = { showCacheDialog = true; menuExpanded = false },
+                        )
+                        DropdownMenuItem(
                             text = { Text("Diagnostics") },
                             leadingIcon = { Icon(Icons.Default.BugReport, contentDescription = null) },
                             onClick = { viewModel.loadDebugInfo(); showDebug = true; menuExpanded = false },
@@ -468,6 +477,15 @@ fun MapScreen(
             currentKey = foursquareKey,
             onSave = { key -> viewModel.saveFoursquareKey(key); showKeyDialog = false },
             onDismiss = { showKeyDialog = false },
+        )
+    }
+
+    if (showCacheDialog) {
+        CacheSettingsDialog(
+            currentSizeMb = cacheSizeMb,
+            onSizeSelected = { mb -> viewModel.setCacheSizeMb(mb) },
+            onClearCache = { viewModel.clearTileCache() },
+            onDismiss = { showCacheDialog = false },
         )
     }
 
