@@ -210,7 +210,7 @@ fun MapScreen(
     val selectedRestaurant by viewModel.selectedRestaurant.collectAsState()
     val filters            by viewModel.filters.collectAsState()
     val availableCuisines  by viewModel.availableCuisines.collectAsState()
-    val visitedIds         by viewModel.visitedIds.collectAsState()
+    val visitedIds         by viewModel.visitedRestaurantIds.collectAsState()
     val userLatLon         by viewModel.userLatLon.collectAsState()
     val isLocating         by viewModel.isLocating.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -390,11 +390,13 @@ fun MapScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val anyFilterActive = filters.distinctions != null ||
-                        filters.cuisines != null || filters.priceTiers != null
+                        filters.cuisines != null || filters.priceTiers != null ||
+                        filters.visitedFilter != null
                 val activeCount = listOfNotNull(
                     filters.distinctions?.takeIf { it.isNotEmpty() },
                     filters.priceTiers?.takeIf { it.isNotEmpty() },
                     filters.cuisines?.takeIf { it.isNotEmpty() },
+                    filters.visitedFilter,
                 ).size
                 FilterChip(
                     selected = anyFilterActive,

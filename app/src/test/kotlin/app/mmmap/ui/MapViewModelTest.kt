@@ -14,6 +14,7 @@ import app.mmmap.ui.map.DebugState
 import app.mmmap.ui.map.MapBounds
 import app.mmmap.ui.map.MapFilters
 import app.mmmap.ui.map.MapViewModel
+import app.mmmap.ui.map.VisitedFilter
 import androidx.work.WorkManager
 import app.mmmap.data.sync.DatasetSyncWorker
 import io.mockk.coEvery
@@ -24,6 +25,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -86,6 +88,7 @@ class MapViewModelTest {
         assertNull(f.distinctions)
         assertNull(f.cuisines)
         assertNull(f.priceTiers)
+        assertNull(f.visitedFilter)
     }
 
     @Test fun availableCuisinesPopulatedOnInit() = runTest {
@@ -175,6 +178,67 @@ class MapViewModelTest {
         advanceUntilIdle()
 
         verify { repo.observeInBounds(50.0, 52.0, -1.0, 1.0, null, null, setOf(2, 3)) }
+        job.cancel()
+    }
+
+    @Test fun visitedFilterOnly_keepsVisitedRestaurants() = runTest {
+        val r1 = restaurant("r1", "Visited Place")
+        val r2 = restaurant("r2", "Unvisited Place")
+        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(listOf(r1, r2))
+        every { visitedRepo.visitedIds } returns flowOf(setOf("r1"))
+
+        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val emissions = mutableListOf<List<Restaurant>>()
+        val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
+
+        freshVm.updateBounds(MapBounds(50.0, 52.0, -1.0, 1.0))
+        freshVm.updateFilters(MapFilters(visitedFilter = VisitedFilter.VISITED_ONLY))
+        advanceUntilIdle()
+
+        assertTrue("expected only visited restaurant", emissions.any { it.size == 1 && it[0].id == "r1" })
+        job.cancel()
+    }
+
+    @Test fun unvisitedFilterOnly_keepsUnvisitedRestaurants() = runTest {
+        val r1 = restaurant("r1", "Visited Place")
+        val r2 = restaurant("r2", "Unvisited Place")
+        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(listOf(r1, r2))
+        every { visitedRepo.visitedIds } returns flowOf(setOf("r1"))
+
+        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val emissions = mutableListOf<List<Restaurant>>()
+        val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
+
+        freshVm.updateBounds(MapBounds(50.0, 52.0, -1.0, 1.0))
+        freshVm.updateFilters(MapFilters(visitedFilter = VisitedFilter.UNVISITED_ONLY))
+        advanceUntilIdle()
+
+        assertTrue("expected only unvisited restaurant", emissions.any { it.size == 1 && it[0].id == "r2" })
+        job.cancel()
+    }
+
+    @Test fun visitedFilter_reactsToVisitedIdsChanging() = runTest {
+        val r1 = restaurant("r1", "Place A")
+        val r2 = restaurant("r2", "Place B")
+        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(listOf(r1, r2))
+
+        val visitedFlow = MutableStateFlow(emptySet<String>())
+        every { visitedRepo.visitedIds } returns visitedFlow
+
+        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val emissions = mutableListOf<List<Restaurant>>()
+        val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
+
+        freshVm.updateBounds(MapBounds(50.0, 52.0, -1.0, 1.0))
+        freshVm.updateFilters(MapFilters(visitedFilter = VisitedFilter.VISITED_ONLY))
+        advanceUntilIdle()
+
+        assertTrue("expected empty before any visit", emissions.last().isEmpty())
+
+        visitedFlow.value = setOf("r1")
+        advanceUntilIdle()
+
+        assertEquals(listOf(r1), emissions.last())
         job.cancel()
     }
 

@@ -56,7 +56,8 @@ fun FiltersSheet(
     val displayCuisines = if (cuisineQuery.isBlank()) availableCuisines
                           else availableCuisines.filter { it.contains(cuisineQuery, ignoreCase = true) }
     val allCuisinesSelected = filters.cuisines == null
-    val anyActive = filters.distinctions != null || filters.cuisines != null || filters.priceTiers != null
+    val anyActive = filters.distinctions != null || filters.cuisines != null ||
+            filters.priceTiers != null || filters.visitedFilter != null
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
@@ -114,6 +115,38 @@ fun FiltersSheet(
                             label = { Text(label) },
                         )
                     }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+
+            // ── Visits ─────────────────────────────────────────────────────
+            item {
+                HorizontalDivider()
+                SectionHeader("Visits")
+                FlowRow(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        selected = filters.visitedFilter == VisitedFilter.VISITED_ONLY,
+                        onClick = {
+                            onFiltersChange(filters.copy(
+                                visitedFilter = if (filters.visitedFilter == VisitedFilter.VISITED_ONLY) null
+                                                else VisitedFilter.VISITED_ONLY,
+                            ))
+                        },
+                        label = { Text("Visited") },
+                    )
+                    FilterChip(
+                        selected = filters.visitedFilter == VisitedFilter.UNVISITED_ONLY,
+                        onClick = {
+                            onFiltersChange(filters.copy(
+                                visitedFilter = if (filters.visitedFilter == VisitedFilter.UNVISITED_ONLY) null
+                                                else VisitedFilter.UNVISITED_ONLY,
+                            ))
+                        },
+                        label = { Text("Unvisited") },
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
             }
