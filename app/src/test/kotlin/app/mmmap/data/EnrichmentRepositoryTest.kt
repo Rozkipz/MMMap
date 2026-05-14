@@ -4,6 +4,11 @@ import app.mmmap.data.db.dao.FoursquareCacheDao
 import app.mmmap.data.db.entities.FoursquareCacheEntity
 import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.remote.FoursquareApi
+import app.mmmap.data.remote.models.FsqHours
+import app.mmmap.data.remote.models.FsqPhoto
+import app.mmmap.data.remote.models.FsqPlaceResponse
+import app.mmmap.data.remote.models.FsqSearchResponse
+import app.mmmap.data.remote.models.FsqSearchResult
 import app.mmmap.data.repository.EnrichmentRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -13,6 +18,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -107,5 +113,109 @@ class EnrichmentRepositoryTest {
         val detail = repo.get("r1", "Test", 51.5, -0.1)
 
         assertEquals(emptyList<String>(), detail?.openingHours)
+    }
+
+    // ── API success path ──────────────────────────────────────────────────────
+
+    @Test fun staleCacheApiSuccess_returnsNewPhotoAndPhone() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns staleEntity()
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(FsqSearchResult(fsqId = "fsq_new", name = "Test", distance = 50))
+        )
+        coEvery { api.getPlace(any(), "fsq_new") } returns FsqPlaceResponse(
+            fsqId = "fsq_new",
+            photos = listOf(FsqPhoto(prefix = "https://img.example.com/", suffix = "/img.jpg")),
+            tel = "+44 20 1234 5678",
+            rating = 9.5,
+        )
+
+        val detail = repo.get("r1", "Test", 51.5, -0.1)
+
+        assertEquals("https://img.example.com/800x800/img.jpg", detail?.photoUrl)
+        assertEquals("+44 20 1234 5678", detail?.phone)
+        assertEquals(9.5, detail?.rating)
+    }
+
+    @Test fun staleCacheApiSuccess_cacheIsUpserted() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns staleEntity()
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(FsqSearchResult(fsqId = "fsq_new", name = "Test", distance = 50))
+        )
+        coEvery { api.getPlace(any(), "fsq_new") } returns FsqPlaceResponse(fsqId = "fsq_new")
+
+        repo.get("r1", "Test", 51.5, -0.1)
+
+        coVerify { cacheDao.upsert(match { it.restaurantId == "r1" && it.fsqId == "fsq_new" }) }
+    }
+
+    @Test fun nullCacheApiSuccess_returnsDetail() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns null
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(FsqSearchResult(fsqId = "fsq_new", name = "Test", distance = 100))
+        )
+        coEvery { api.getPlace(any(), "fsq_new") } returns FsqPlaceResponse(
+            fsqId = "fsq_new", rating = 8.0
+        )
+
+        val detail = repo.get("r1", "Test", 51.5, -0.1)
+
+        assertEquals(8.0, detail?.rating)
+    }
+
+    @Test fun resultsOutsideRadius_returnsStaleCacheWithoutGetPlace() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns staleEntity()
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(FsqSearchResult(fsqId = "fsq_far", name = "Test", distance = 300))
+        )
+
+        val detail = repo.get("r1", "Test", 51.5, -0.1)
+
+        assertEquals("https://example.com/photo.jpg", detail?.photoUrl)
+        coVerify(exactly = 0) { api.getPlace(any(), any()) }
+    }
+
+    @Test fun emptySearchResults_returnsStaleCacheWithoutGetPlace() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns staleEntity()
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(results = emptyList())
+
+        val detail = repo.get("r1", "Test", 51.5, -0.1)
+
+        assertEquals("https://example.com/photo.jpg", detail?.photoUrl)
+        coVerify(exactly = 0) { api.getPlace(any(), any()) }
+    }
+
+    @Test fun apiSuccess_hoursAndOpenNowParsed() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns null
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(FsqSearchResult(fsqId = "fsq_new", name = "Test", distance = 50))
+        )
+        coEvery { api.getPlace(any(), "fsq_new") } returns FsqPlaceResponse(
+            fsqId = "fsq_new",
+            hours = FsqHours(openNow = true, display = "Mon-Fri 9:00-17:00\nSat 10:00-16:00"),
+        )
+
+        val detail = repo.get("r1", "Test", 51.5, -0.1)
+
+        assertTrue(detail?.isOpenNow == true)
+        assertEquals(listOf("Mon-Fri 9:00-17:00", "Sat 10:00-16:00"), detail?.openingHours)
+    }
+
+    @Test fun nullSearchResultDistance_resultExcluded() = runTest {
+        every { apiKeyPrefs.fsqApiKey } returns flowOf("test-key")
+        coEvery { cacheDao.get("r1") } returns null
+        coEvery { api.searchPlaces(any(), any(), any()) } returns FsqSearchResponse(
+            results = listOf(FsqSearchResult(fsqId = "fsq_nodist", name = "Test", distance = null))
+        )
+
+        val detail = repo.get("r1", "Test", 51.5, -0.1)
+
+        assertNull(detail)
+        coVerify(exactly = 0) { api.getPlace(any(), any()) }
     }
 }
