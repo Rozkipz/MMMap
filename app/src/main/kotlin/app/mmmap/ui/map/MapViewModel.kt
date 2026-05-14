@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -75,6 +74,7 @@ class MapViewModel @Inject constructor(
     private val apiKeyPrefs: ApiKeyPreferences,
     private val syncPrefs: SyncPreferences,
     private val tileCacheManager: TileCacheManager,
+    private val workManager: WorkManager,
 ) : ViewModel() {
 
     val bounds = MutableStateFlow<MapBounds?>(null)
@@ -123,11 +123,9 @@ class MapViewModel @Inject constructor(
 
     fun loadDebugInfo() {
         viewModelScope.launch {
-            val workInfos = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                WorkManager.getInstance(context)
+            val workInfos = workManager
                     .getWorkInfosForUniqueWork(DatasetSyncWorker.TAG)
                     .get()
-            }
             val workInfo = workInfos.firstOrNull()
             debugState.value = DebugState(
                 dbRestaurantCount = repo.count(),
@@ -148,7 +146,7 @@ class MapViewModel @Inject constructor(
             val request = PeriodicWorkRequestBuilder<DatasetSyncWorker>(1, TimeUnit.DAYS)
                 .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
                 .build()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            workManager.enqueueUniquePeriodicWork(
                 DatasetSyncWorker.TAG,
                 ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
                 request,
