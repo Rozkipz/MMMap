@@ -2,6 +2,7 @@ package app.mmmap.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.work.WorkManager
 import app.mmmap.data.db.AppDatabase
 import app.mmmap.data.db.dao.FoursquareCacheDao
 import app.mmmap.data.db.dao.RestaurantDao
@@ -26,4 +27,9 @@ object DatabaseModule {
     @Provides fun provideRestaurantDao(db: AppDatabase): RestaurantDao = db.restaurantDao()
 
     @Provides fun provideFoursquareCacheDao(db: AppDatabase): FoursquareCacheDao = db.foursquareCacheDao()
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+        WorkManager.getInstance(context)
 }
