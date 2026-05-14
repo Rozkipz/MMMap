@@ -1,5 +1,8 @@
 # MMMap — MICHELIN Guide Map
 
+[![CI](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml/badge.svg)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Rozkipz/MMMap/badges/coverage.json)](https://github.com/Rozkipz/MMMap/actions/workflows/ci.yml)
+
 An Android app that shows every restaurant in the MICHELIN Guide on an interactive map.
 
 ## Features
