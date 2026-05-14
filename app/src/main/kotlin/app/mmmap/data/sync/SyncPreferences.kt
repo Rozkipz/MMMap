@@ -17,6 +17,7 @@ class SyncPreferences @Inject constructor(
     private val keySyncAt = longPreferencesKey("last_sync_at")
 
     suspend fun lastCsvSha(): String? = dataStore.data.first()[keySha]
+    suspend fun lastSyncAt(): Long?   = dataStore.data.first()[keySyncAt]
 
     suspend fun setLastCsvSha(sha: String) {
         dataStore.edit {

@@ -2,7 +2,9 @@ package app.mmmap.ui
 
 import android.content.Context
 import android.location.LocationManager
+import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.repository.RestaurantRepository
+import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.map.MapBounds
@@ -35,6 +37,8 @@ class MapViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val repo: RestaurantRepository = mockk(relaxed = true)
     private val context: Context = mockk(relaxed = true)
+    private val apiKeyPrefs: ApiKeyPreferences = mockk(relaxed = true)
+    private val syncPrefs: SyncPreferences = mockk(relaxed = true)
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
@@ -43,7 +47,8 @@ class MapViewModelTest {
         coEvery { repo.distinctCuisines() } returns listOf("French", "Japanese")
         coEvery { repo.distinctPrices() } returns listOf("£", "££", "£££")
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
-        vm = MapViewModel(context, repo)
+        every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
+        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs)
     }
 
     @After fun tearDown() {

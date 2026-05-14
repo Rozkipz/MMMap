@@ -8,7 +8,9 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.repository.RestaurantRepository
+import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.ui.map.MapViewModel
 import io.mockk.coEvery
 import io.mockk.every
@@ -43,6 +45,8 @@ class MapViewModelLocateTest {
     private val repo = mockk<RestaurantRepository>(relaxed = true)
     private val context = mockk<Context>(relaxed = true)
     private val locationManager = mockk<LocationManager>(relaxed = true)
+    private val apiKeyPrefs = mockk<ApiKeyPreferences>(relaxed = true)
+    private val syncPrefs = mockk<SyncPreferences>(relaxed = true)
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
@@ -51,13 +55,14 @@ class MapViewModelLocateTest {
         coEvery { repo.distinctCuisines() } returns emptyList()
         coEvery { repo.distinctPrices() } returns emptyList()
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+        every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
         mockkStatic(ContextCompat::class)
         mockkStatic(Looper::class)
         every { ContextCompat.checkSelfPermission(any(), any()) } returns PackageManager.PERMISSION_GRANTED
         every { Looper.getMainLooper() } returns mockk(relaxed = true)
         every { locationManager.isProviderEnabled(any()) } returns true
         every { locationManager.getLastKnownLocation(any()) } returns null
-        vm = MapViewModel(context, repo)
+        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs)
     }
 
     @After fun tearDown() {

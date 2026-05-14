@@ -2,11 +2,14 @@ package app.mmmap.data
 
 import app.mmmap.data.db.dao.FoursquareCacheDao
 import app.mmmap.data.db.entities.FoursquareCacheEntity
+import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.remote.FoursquareApi
 import app.mmmap.data.repository.EnrichmentRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -17,6 +20,7 @@ class EnrichmentRepositoryTest {
 
     private val api: FoursquareApi = mockk(relaxed = true)
     private val cacheDao: FoursquareCacheDao = mockk(relaxed = true)
+    private val apiKeyPrefs: ApiKeyPreferences = mockk(relaxed = true)
     private lateinit var repo: EnrichmentRepository
 
     private val now = System.currentTimeMillis()
@@ -36,7 +40,8 @@ class EnrichmentRepositoryTest {
     )
 
     @Before fun setUp() {
-        repo = EnrichmentRepository(api, cacheDao)
+        every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
+        repo = EnrichmentRepository(api, cacheDao, apiKeyPrefs)
     }
 
     @Test fun freshCacheReturnedWithoutApiCall() = runTest {

@@ -3,10 +3,12 @@ package app.mmmap.data.repository
 import app.mmmap.BuildConfig
 import app.mmmap.data.db.dao.FoursquareCacheDao
 import app.mmmap.data.db.entities.FoursquareCacheEntity
+import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.remote.FoursquareApi
 import app.mmmap.data.remote.models.FsqHours
 import app.mmmap.domain.model.FoursquareDetail
 import app.mmmap.util.jaroWinklerDistance
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -16,6 +18,7 @@ import javax.inject.Singleton
 class EnrichmentRepository @Inject constructor(
     private val api: FoursquareApi,
     private val cacheDao: FoursquareCacheDao,
+    private val apiKeyPrefs: ApiKeyPreferences,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -31,11 +34,14 @@ class EnrichmentRepository @Inject constructor(
             return cached.toDetail()
         }
 
-        if (BuildConfig.FSQ_API_KEY.isBlank()) return cached?.toDetail()
+        val apiKey = apiKeyPrefs.fsqApiKey.first()
+            ?.takeIf { it.isNotBlank() }
+            ?: BuildConfig.FSQ_API_KEY.takeIf { it.isNotBlank() }
+            ?: return cached?.toDetail()
 
         return try {
             val searchResult = api.searchPlaces(
-                apiKey = BuildConfig.FSQ_API_KEY,
+                apiKey = apiKey,
                 latLon = "$latitude,$longitude",
                 query = name,
             )
@@ -44,7 +50,7 @@ class EnrichmentRepository @Inject constructor(
                 .minByOrNull { jaroWinklerDistance(name, it.name) }
                 ?: return cached?.toDetail()
 
-            val place = api.getPlace(BuildConfig.FSQ_API_KEY, best.fsqId)
+            val place = api.getPlace(apiKey, best.fsqId)
             val hoursJson = place.hours?.let { json.encodeToString(it) }
             val entity = FoursquareCacheEntity(
                 restaurantId = restaurantId,

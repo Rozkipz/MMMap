@@ -63,17 +63,19 @@ tag version:
 
 # Create a GitHub Release and attach the signed APK
 # Pass target SHA to pin the tag to a specific commit (e.g. $GITHUB_SHA in CI)
-# Uses fastlane changelog if present, otherwise auto-generates notes from commits since last release
+# Uses fastlane changelog if present, otherwise builds bullet-point notes from commits since last tag
 gh-release version target='':
     #!/usr/bin/env bash
     set -euo pipefail
     APK="app/build/outputs/apk/release/app-release.apk"
-    NOTES="fastlane/metadata/android/en-US/changelogs/$(cat .version-code 2>/dev/null || true).txt"
+    NOTES_FILE="fastlane/metadata/android/en-US/changelogs/$(cat .version-code 2>/dev/null || true).txt"
     TARGET_FLAG={{ if target != '' { '"--target ' + target + '"' } else { '""' } }}
-    if [[ -f "$NOTES" ]]; then
-      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes-file "$NOTES" "$APK#MMMap_v{{version}}.apk"
+    if [[ -f "$NOTES_FILE" ]]; then
+      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes-file "$NOTES_FILE" "$APK#MMMap_v{{version}}.apk"
     else
-      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --generate-notes "$APK#MMMap_v{{version}}.apk"
+      PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)
+      CHANGELOG=$(git log "${PREV}..HEAD" --pretty=format:"- %s")
+      gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes "$CHANGELOG" "$APK#MMMap_v{{version}}.apk"
     fi
 
 # Full release pipeline: clean → check → sign APK → tag → GitHub Release

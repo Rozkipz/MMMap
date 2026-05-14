@@ -13,7 +13,12 @@ import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
+import app.mmmap.BuildConfig
+import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.repository.RestaurantRepository
+import app.mmmap.data.sync.DatasetSyncWorker
+import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,8 +31,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val LOCATE_TIMEOUT_MS = 60_000L
@@ -43,10 +50,22 @@ data class MapFilters(
     val price: String? = null,
 )
 
+data class DebugState(
+    val dbRestaurantCount: Int,
+    val viewportCount: Int,
+    val lastSyncAt: Long?,
+    val lastCsvSha: String?,
+    val workerState: String,
+    val bounds: MapBounds?,
+    val filters: MapFilters,
+)
+
 @HiltViewModel
 class MapViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repo: RestaurantRepository,
+    private val apiKeyPrefs: ApiKeyPreferences,
+    private val syncPrefs: SyncPreferences,
 ) : ViewModel() {
 
     val bounds = MutableStateFlow<MapBounds?>(null)
@@ -70,6 +89,36 @@ class MapViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val selectedRestaurant = MutableStateFlow<Restaurant?>(null)
+
+    // Effective Foursquare API key: DataStore override → build-time key from local.properties
+    val foursquareKey: StateFlow<String> = apiKeyPrefs.fsqApiKey
+        .map { stored -> stored?.takeIf { it.isNotBlank() } ?: BuildConfig.FSQ_API_KEY }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BuildConfig.FSQ_API_KEY)
+
+    fun saveFoursquareKey(key: String) {
+        viewModelScope.launch { apiKeyPrefs.setFsqApiKey(key) }
+    }
+
+    val debugState = MutableStateFlow<DebugState?>(null)
+
+    fun loadDebugInfo() {
+        viewModelScope.launch {
+            val workInfos = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                WorkManager.getInstance(context)
+                    .getWorkInfosForUniqueWork(DatasetSyncWorker.TAG)
+                    .get()
+            }
+            debugState.value = DebugState(
+                dbRestaurantCount = repo.count(),
+                viewportCount     = restaurants.value.size,
+                lastSyncAt        = syncPrefs.lastSyncAt(),
+                lastCsvSha        = syncPrefs.lastCsvSha()?.take(8),
+                workerState       = workInfos.firstOrNull()?.state?.name ?: "none",
+                bounds            = bounds.value,
+                filters           = filters.value,
+            )
+        }
+    }
 
     private val _userLatLon = MutableStateFlow<Pair<Double, Double>?>(null)
     val userLatLon: StateFlow<Pair<Double, Double>?> = _userLatLon

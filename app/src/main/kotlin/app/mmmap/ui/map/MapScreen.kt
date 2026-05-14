@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import app.mmmap.ThemeMode
@@ -50,6 +51,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import app.mmmap.ui.about.AboutDialog
+import app.mmmap.ui.debug.DebugInfoDialog
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -66,6 +69,7 @@ import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.chipLabel
 import app.mmmap.ui.detail.RestaurantSheet
 import app.mmmap.ui.dotColor
+import app.mmmap.ui.settings.FoursquareKeyDialog
 import app.mmmap.ui.theme.UserGrey
 import kotlinx.coroutines.launch
 import org.maplibre.android.MapLibre
@@ -185,8 +189,12 @@ fun MapScreen(
     val isLocating         by viewModel.isLocating.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope = rememberCoroutineScope()
-    var menuExpanded by remember { mutableStateOf(false) }
-    var showAbout by remember { mutableStateOf(false) }
+    val foursquareKey     by viewModel.foursquareKey.collectAsState()
+    val debugState        by viewModel.debugState.collectAsState()
+    var menuExpanded      by remember { mutableStateOf(false) }
+    var showAbout         by remember { mutableStateOf(false) }
+    var showKeyDialog     by remember { mutableStateOf(false) }
+    var showDebug         by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val context = LocalContext.current
@@ -405,6 +413,16 @@ fun MapScreen(
                             onClick = { onCycleTheme(); menuExpanded = false },
                         )
                         DropdownMenuItem(
+                            text = { Text("Foursquare API Key") },
+                            leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
+                            onClick = { showKeyDialog = true; menuExpanded = false },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Diagnostics") },
+                            leadingIcon = { Icon(Icons.Default.BugReport, contentDescription = null) },
+                            onClick = { viewModel.loadDebugInfo(); showDebug = true; menuExpanded = false },
+                        )
+                        DropdownMenuItem(
                             text = { Text("About") },
                             leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
                             onClick = { showAbout = true; menuExpanded = false },
@@ -457,6 +475,19 @@ fun MapScreen(
 
     if (showAbout) {
         AboutDialog(onDismiss = { showAbout = false })
+    }
+
+    if (showKeyDialog) {
+        FoursquareKeyDialog(
+            currentKey = foursquareKey,
+            onSave = { key -> viewModel.saveFoursquareKey(key); showKeyDialog = false },
+            onDismiss = { showKeyDialog = false },
+        )
+    }
+
+    val ds = debugState
+    if (showDebug && ds != null) {
+        DebugInfoDialog(state = ds, onDismiss = { showDebug = false })
     }
 }
 
