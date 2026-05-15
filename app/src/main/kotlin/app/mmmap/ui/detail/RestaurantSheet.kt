@@ -2,7 +2,6 @@ package app.mmmap.ui.detail
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -18,11 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
@@ -49,6 +49,7 @@ import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.badgeColor
 import app.mmmap.ui.badgeLabel
 import app.mmmap.ui.theme.GreenStar
+import app.mmmap.ui.theme.StarGold
 import coil3.compose.AsyncImage
 
 /** ViewModel-connected entry point used by the navigation graph. */
@@ -209,26 +210,35 @@ internal fun RestaurantSheetContent(
 
         Spacer(Modifier.height(16.dp))
 
-        // "Been here" toggle
+        // Action row
         val haptic = LocalHapticFeedback.current
         val toggle: (Boolean) -> Unit = { newValue ->
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onVisitedChange(newValue)
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { toggle(!isVisited) }
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(checked = isVisited, onCheckedChange = toggle)
-            Spacer(Modifier.width(4.dp))
-            Text("I've been here", style = MaterialTheme.typography.bodyMedium)
-        }
-
-        // Action row
         Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = { toggle(true) },
+                modifier = Modifier.size(56.dp),
+            ) {
+                Icon(
+                    Icons.Default.Check,
+                    contentDescription = "Mark as visited",
+                    modifier = Modifier.size(28.dp),
+                    tint = if (isVisited) StarGold else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            IconButton(
+                onClick = { toggle(false) },
+                modifier = Modifier.size(56.dp),
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove visited mark",
+                    modifier = Modifier.size(28.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             val phone = enrichment?.phone ?: restaurant.phoneNumber
             if (phone != null) {
                 IconButton(
