@@ -218,25 +218,14 @@ internal fun RestaurantSheetContent(
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
-                onClick = { toggle(true) },
+                onClick = { toggle(!isVisited) },
                 modifier = Modifier.size(56.dp),
             ) {
                 Icon(
-                    Icons.Default.Check,
-                    contentDescription = "Mark as visited",
+                    if (isVisited) Icons.Default.Check else Icons.Default.Close,
+                    contentDescription = if (isVisited) "Remove visited mark" else "Mark as visited",
                     modifier = Modifier.size(28.dp),
                     tint = if (isVisited) StarGold else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(
-                onClick = { toggle(false) },
-                modifier = Modifier.size(56.dp),
-            ) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = "Remove visited mark",
-                    modifier = Modifier.size(28.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             val phone = enrichment?.phone ?: restaurant.phoneNumber
