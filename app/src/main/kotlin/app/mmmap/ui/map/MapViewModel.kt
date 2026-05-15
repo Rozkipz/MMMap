@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 private const val LOCATE_TIMEOUT_MS = 60_000L
+private val PrettyJson = Json { prettyPrint = true }
 
 data class MapBounds(
     val minLat: Double, val maxLat: Double,
@@ -77,7 +78,7 @@ data class DebugState(
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val repo: RestaurantRepository,
     private val apiKeyPrefs: ApiKeyPreferences,
     private val syncPrefs: SyncPreferences,
@@ -167,7 +168,7 @@ class MapViewModel @Inject constructor(
     fun exportVisited(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                val json = Json { prettyPrint = true }.encodeToString(visitedRepo.getAll())
+                val json = PrettyJson.encodeToString(visitedRepo.getAll())
                 context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
                 _importExportMessage.value = "Exported ${visitedRepo.count()} places"
             }.onFailure {
