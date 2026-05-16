@@ -27,7 +27,7 @@
 
 <div align="center">
 
-![Demo](docs/screenshots/demo.gif)
+<video src="docs/screenshots/demo.mp4" autoplay loop muted playsinline width="360"></video>
 
 | Map | Filters | Detail | Near Me |
 |-----|---------|--------|---------|
