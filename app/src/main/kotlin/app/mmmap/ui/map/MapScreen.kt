@@ -50,6 +50,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import app.mmmap.ui.about.AboutDialog
@@ -249,6 +251,36 @@ fun MapScreen(
     val context = LocalContext.current
     val mapHolder = remember { MapHolder() }
 
+    // Keep the selected pin sitting just above the detail panel as the user drags it.
+    // snapshotFlow re-fires on every pixel of drag; moveCamera (no animation) applies instantly.
+    LaunchedEffect(sheetState, selectedRestaurant) {
+        val restaurant = selectedRestaurant
+        if (restaurant == null) {
+            // Sheet just closed — reset any residual padding so the map isn't offset.
+            mapHolder.map?.let { map ->
+                map.moveCamera(
+                    CameraUpdateFactory.newLatLngPadding(
+                        map.cameraPosition.target ?: return@let,
+                        0.0, 0.0, 0.0, 0.0
+                    )
+                )
+            }
+            return@LaunchedEffect
+        }
+        snapshotFlow { runCatching { sheetState.requireOffset() }.getOrDefault(Float.MAX_VALUE) }
+            .filter { it < Float.MAX_VALUE }
+            .collect { sheetTopPx ->
+                val map = mapHolder.map ?: return@collect
+                val bottomPadding = (map.height - sheetTopPx).coerceIn(0f, map.height * 0.85f)
+                map.moveCamera(
+                    CameraUpdateFactory.newLatLngPadding(
+                        LatLng(restaurant.latitude, restaurant.longitude),
+                        0.0, 0.0, 0.0, bottomPadding.toDouble()
+                    )
+                )
+            }
+    }
+
     LaunchedEffect(focusRestaurant) {
         val restaurant = focusRestaurant ?: return@LaunchedEffect
         viewModel.selectRestaurant(restaurant)
@@ -358,19 +390,6 @@ fun MapScreen(
                             val id = features.firstOrNull()?.getStringProperty(PROP_RESTAURANT_ID)
                             val hit = restaurants.find { it.id == id }
                             viewModel.selectRestaurant(hit)
-                            if (hit != null) {
-                                // Shift the pin into the visible area above the detail sheet.
-                                // The sheet covers roughly the bottom 55% of the map viewport;
-                                // padding the bottom by ~60% of map height centers the pin
-                                // in the visible strip above it.
-                                val mapHeightPx = libMap.height.toDouble()
-                                libMap.animateCamera(
-                                    CameraUpdateFactory.newLatLngPadding(
-                                        LatLng(hit.latitude, hit.longitude),
-                                        0.0, 0.0, 0.0, mapHeightPx * 0.60
-                                    )
-                                )
-                            }
                             hit != null
                         }
                         val pendingFocus = viewModel.pendingFocusLatLon
