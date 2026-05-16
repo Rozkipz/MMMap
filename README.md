@@ -25,10 +25,15 @@
 
 ## Screenshots
 
-> _Screenshots coming soon — contributions welcome!_
->
-> To add screenshots, place `map.png`, `filters.png`, `detail.png`, and `nearby.png`
-> in `docs/screenshots/` and open a pull request.
+<div align="center">
+
+![Demo](docs/screenshots/demo.gif)
+
+| Map | Filters | Detail | Near Me |
+|-----|---------|--------|---------|
+| ![Map](docs/screenshots/map.png) | ![Filters](docs/screenshots/filters.png) | ![Detail](docs/screenshots/detail.png) | ![Near Me](docs/screenshots/nearby.png) |
+
+</div>
 
 ## Install
 
@@ -119,12 +124,13 @@ All dependencies are either Apache 2.0, MIT, or LGPL-licensed — fully F-Droid-
 
 ## Roadmap
 
-- [ ] Visited list — browse everywhere you've been, sorted by visit date
-- [ ] Visited filters — "Visited only" / "Unvisited only" chip in the filters sheet
-- [ ] Import / export visited data — JSON or CSV backup (schema is already self-contained)
+- [x] Visited list — browse everywhere you've been, sorted by visit date
+- [x] Visited filters — "Visited only" / "Unvisited only" chip in the filters sheet
+- [x] Import / export visited data — JSON backup
+- [x] F-Droid distribution (metadata ready, submission pending)
 - [ ] Country selector to narrow the dataset
 - [ ] Offline tile bundles for full offline use
-- [ ] F-Droid / IzzyOnDroid distribution
+- [ ] IzzyOnDroid distribution
 
 ---
 
