@@ -27,7 +27,7 @@
 
 <div align="center">
 
-<video src="docs/screenshots/demo.mp4" autoplay loop muted playsinline width="360"></video>
+<video src="https://raw.githubusercontent.com/Rozkipz/Mmmap/main/docs/screenshots/demo.mp4" autoplay loop muted playsinline width="360"></video>
 
 | Map | Filters | Detail | Near Me |
 |-----|---------|--------|---------|
