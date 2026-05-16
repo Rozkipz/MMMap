@@ -1,0 +1,65 @@
+# F-Droid metadata for Mmmap
+#
+# This file lives in the fdroiddata repository (https://gitlab.com/fdroid/fdroiddata),
+# NOT in the Mmmap source tree.  Copy it there once you have forked fdroiddata.
+#
+# Before submitting the MR:
+#   1. Fill in AllowedAPKSigningKeys (see note below).
+#   2. Run: fdroid lint metadata/app.mmmap.yml
+#   3. Run: fdroid rewritemeta app.mmmap  (auto-formats fields)
+#
+# AllowedAPKSigningKeys — get your cert's SHA-256 fingerprint with:
+#   keytool -list -v -keystore mmmap-release.jks -alias mmmap \
+#       | grep "SHA-256"
+# Remove colons from the fingerprint before pasting here.
+# This enables the "signed-by-upstream" path: F-Droid verifies its unsigned
+# build byte-matches your signed GitHub Release APK, then serves your APK.
+
+Categories:
+  - Navigation
+License: MIT
+AuthorName: Rowan
+SourceCode: https://github.com/Rozkipz/MMMap
+IssueTracker: https://github.com/Rozkipz/MMMap/issues
+Changelog: https://github.com/Rozkipz/MMMap/blob/main/CHANGELOG.md
+
+AutoName: Mmmap
+Summary: Offline MICHELIN Guide restaurant map
+Description: |
+  Mmmap puts every restaurant in the MICHELIN Guide on a single map —
+  from three-star temples of gastronomy to Bib Gourmand hidden gems.
+
+  Restaurant data is bundled with the app so the map works fully offline
+  from first launch. The dataset is refreshed in the background when an
+  update is available on GitHub.
+
+  Features: filter by distinction, cuisine, and price; tap any pin for
+  details; Near Me sorted by distance; mark restaurants as visited.
+
+  Privacy: no tracking, no analytics, no account required.
+
+AntiFeatures:
+  NonFreeNet:
+    en-US: >
+      Optional Foursquare enrichment (photos, hours, ratings) contacts
+      api.foursquare.com — requires a user-supplied API key.
+      Dataset refresh contacts raw.githubusercontent.com (GitHub).
+      Map tiles are served by tiles.openfreemap.org.
+
+RepoType: git
+Repo: https://github.com/Rozkipz/MMMap
+
+Builds:
+  - versionName: '1.0.0'
+    versionCode: 10000
+    commit: v1.0.0
+    gradle:
+      - yes
+    output: app/build/outputs/apk/release/app-release.apk
+
+AllowedAPKSigningKeys: 9359eb2699bd2f2a234a2a5379cb8c22a8ebe44ddb34b93192c73b7aeafde347
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+CurrentVersion: '1.0.0'
+CurrentVersionCode: 10000

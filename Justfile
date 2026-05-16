@@ -93,11 +93,19 @@ release version:
     just tag {{version}}
     just gh-release {{version}}
 
-# ─── Phase 2 (F-Droid + IzzyOnDroid — deferred) ──────────────────────────────
-# fdroid-lint:        # Validate F-Droid metadata YAML against fdroiddata rules
-#     fdroid lint metadata/{{package}}.yml
-# fdroid-build-local: # Simulate an F-Droid reproducible build locally
-#     fdroid build --on-server --no-tarball {{package}}
+# ─── Phase 2 (F-Droid) ────────────────────────────────────────────────────────
+
+# Download the upstream MICHELIN CSV and regenerate app/src/main/assets/michelin.db
+seed-db:
+    python3 scripts/seed_db.py
+
+# Validate F-Droid metadata YAML (run from inside a fdroiddata clone)
+fdroid-lint path='../fdroiddata':
+    fdroid lint --allow-disabled-algorithms {{path}}/metadata/{{package}}.yml
+
+# Simulate a reproducible F-Droid build locally (requires fdroidserver + Docker)
+fdroid-build-local path='../fdroiddata':
+    fdroid build --on-server --no-tarball --verbose {{package}}
 
 # ─── Utilities ────────────────────────────────────────────────────────────────
 

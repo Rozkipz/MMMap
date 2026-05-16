@@ -10,12 +10,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.list.NearbyScreen
 import app.mmmap.ui.map.MapScreen
 
@@ -35,6 +39,7 @@ fun MmmapNavGraph(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    var pendingMapFocus by remember { mutableStateOf<Restaurant?>(null) }
 
     Scaffold(
         bottomBar = {
@@ -79,10 +84,23 @@ fun MmmapNavGraph(
                     isDarkTheme = isDarkTheme,
                     themeMode = themeMode,
                     onCycleTheme = onCycleTheme,
+                    focusRestaurant = pendingMapFocus,
+                    onFocusConsumed = { pendingMapFocus = null },
                 )
             }
             composable(Screen.Nearby.route) {
-                NearbyScreen()
+                NearbyScreen(
+                    onNavigateToRestaurant = { restaurant ->
+                        pendingMapFocus = restaurant
+                        navController.navigate(Screen.Map.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
             }
         }
     }

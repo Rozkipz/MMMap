@@ -103,9 +103,8 @@ private const val PROP_RESTAURANT_ID = "id"
 private const val PROP_DISTINCTION   = "distinction"
 private const val PROP_VISITED       = "visited"
 
-// OpenFreeMap light style; CARTO Dark Matter for dark mode (both free, no API key)
 private const val TILE_STYLE_URL      = "https://tiles.openfreemap.org/styles/liberty"
-private const val TILE_STYLE_DARK_URL = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+private const val TILE_STYLE_DARK_URL = "https://tiles.openfreemap.org/styles/dark"
 
 private fun Color.toCssHex(): String = "#%06X".format(toArgb() and 0xFFFFFF)
 
@@ -209,6 +208,8 @@ fun MapScreen(
     isDarkTheme: Boolean = false,
     themeMode: ThemeMode = ThemeMode.AUTO,
     onCycleTheme: () -> Unit = {},
+    focusRestaurant: Restaurant? = null,
+    onFocusConsumed: () -> Unit = {},
     viewModel: MapViewModel = hiltViewModel(),
 ) {
     val restaurants        by viewModel.restaurants.collectAsState()
@@ -247,6 +248,20 @@ fun MapScreen(
 
     val context = LocalContext.current
     val mapHolder = remember { MapHolder() }
+
+    LaunchedEffect(focusRestaurant) {
+        val restaurant = focusRestaurant ?: return@LaunchedEffect
+        viewModel.selectRestaurant(restaurant)
+        val map = mapHolder.map
+        if (map != null) {
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                LatLng(restaurant.latitude, restaurant.longitude), 15.0
+            ))
+        } else {
+            viewModel.pendingFocusLatLon = Pair(restaurant.latitude, restaurant.longitude)
+        }
+        onFocusConsumed()
+    }
 
     LaunchedEffect(userLatLon) {
         val loc = userLatLon ?: return@LaunchedEffect
@@ -345,9 +360,16 @@ fun MapScreen(
                             viewModel.selectRestaurant(hit)
                             hit != null
                         }
+                        val pendingFocus = viewModel.pendingFocusLatLon
                         val savedCamera = viewModel.lastCameraPosition
                         val pendingGps = mapHolder.pendingCameraTarget
                         when {
+                            pendingFocus != null -> {
+                                viewModel.pendingFocusLatLon = null
+                                libMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                                    LatLng(pendingFocus.first, pendingFocus.second), 15.0
+                                ))
+                            }
                             savedCamera != null -> libMap.cameraPosition = CameraPosition.Builder()
                                 .target(LatLng(savedCamera.first, savedCamera.second))
                                 .zoom(savedCamera.third)
@@ -378,7 +400,6 @@ fun MapScreen(
 
                 val expectedUrl = if (isDarkTheme) TILE_STYLE_DARK_URL else TILE_STYLE_URL
                 if (mapHolder.appliedStyleUrl != expectedUrl) {
-                    // Theme changed — stash data so the reload callback can reapply it
                     mapHolder.pendingRestaurantCollection = collection
                     mapHolder.pendingUserLocation = userLatLon
                     mapHolder.appliedStyleUrl = expectedUrl

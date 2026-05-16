@@ -235,6 +235,9 @@ class MapViewModel @Inject constructor(
     // True after the first automatic zoom to GPS; prevents re-zooming on tab switch
     var hasZoomedToUserOnce = false
 
+    // Set by Nearby→Map navigation; consumed on next map init to animate the camera
+    var pendingFocusLatLon: Pair<Double, Double>? = null
+
     fun saveLastCamera(lat: Double, lon: Double, zoom: Double) {
         lastCameraPosition = Triple(lat, lon, zoom)
     }

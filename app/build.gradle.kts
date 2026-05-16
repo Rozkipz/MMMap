@@ -87,6 +87,13 @@ android {
         buildConfig = true
     }
 
+    androidResources {
+        // Prevent aapt2 from compressing the bundled SQLite asset.
+        // Android's AssetManager can't stream compressed assets >1 MB, which
+        // would cause Room's createFromAsset to throw on first launch.
+        noCompress += "db"
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
