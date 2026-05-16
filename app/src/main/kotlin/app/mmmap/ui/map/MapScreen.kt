@@ -277,7 +277,7 @@ fun MapScreen(
             viewModel.hasZoomedToUserOnce = true
             val map = mapHolder.map
             if (map != null) {
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(loc.first, loc.second), 14.0))
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(loc.first, loc.second), 13.0))
             } else {
                 mapHolder.pendingCameraTarget = loc
             }
@@ -358,6 +358,19 @@ fun MapScreen(
                             val id = features.firstOrNull()?.getStringProperty(PROP_RESTAURANT_ID)
                             val hit = restaurants.find { it.id == id }
                             viewModel.selectRestaurant(hit)
+                            if (hit != null) {
+                                // Shift the pin into the visible area above the detail sheet.
+                                // The sheet covers roughly the bottom 55% of the map viewport;
+                                // padding the bottom by ~60% of map height centers the pin
+                                // in the visible strip above it.
+                                val mapHeightPx = libMap.height.toDouble()
+                                libMap.animateCamera(
+                                    CameraUpdateFactory.newLatLngPadding(
+                                        LatLng(hit.latitude, hit.longitude),
+                                        0.0, 0.0, 0.0, mapHeightPx * 0.60
+                                    )
+                                )
+                            }
                             hit != null
                         }
                         val pendingFocus = viewModel.pendingFocusLatLon
@@ -377,7 +390,7 @@ fun MapScreen(
                             pendingGps != null -> {
                                 libMap.cameraPosition = CameraPosition.Builder()
                                     .target(LatLng(pendingGps.first, pendingGps.second))
-                                    .zoom(14.0)
+                                    .zoom(13.0)
                                     .build()
                                 mapHolder.pendingCameraTarget = null
                             }
