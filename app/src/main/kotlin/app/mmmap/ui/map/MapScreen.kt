@@ -51,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
@@ -267,6 +268,7 @@ fun MapScreen(
             }
             return@LaunchedEffect
         }
+        delay(200)
         snapshotFlow { runCatching { sheetState.requireOffset() }.getOrDefault(Float.MAX_VALUE) }
             .filter { it < Float.MAX_VALUE }
             .collect { sheetTopPx ->
@@ -286,9 +288,12 @@ fun MapScreen(
         viewModel.selectRestaurant(restaurant)
         val map = mapHolder.map
         if (map != null) {
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                LatLng(restaurant.latitude, restaurant.longitude), 15.0
-            ))
+            val zoomTo = maxOf(map.cameraPosition.zoom, 14.0)
+            map.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(
+                    LatLng(restaurant.latitude, restaurant.longitude), zoomTo
+                ), 450, null
+            )
         } else {
             viewModel.pendingFocusLatLon = Pair(restaurant.latitude, restaurant.longitude)
         }
@@ -309,7 +314,7 @@ fun MapScreen(
             viewModel.hasZoomedToUserOnce = true
             val map = mapHolder.map
             if (map != null) {
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(loc.first, loc.second), 13.0))
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(loc.first, loc.second), 11.0))
             } else {
                 mapHolder.pendingCameraTarget = loc
             }
@@ -389,6 +394,14 @@ fun MapScreen(
                             val features = libMap.queryRenderedFeatures(screenPoint, LAYER_ID)
                             val id = features.firstOrNull()?.getStringProperty(PROP_RESTAURANT_ID)
                             val hit = restaurants.find { it.id == id }
+                            if (hit != null) {
+                                val zoomTo = maxOf(libMap.cameraPosition.zoom, 14.0)
+                                libMap.animateCamera(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(hit.latitude, hit.longitude), zoomTo
+                                    ), 450, null
+                                )
+                            }
                             viewModel.selectRestaurant(hit)
                             hit != null
                         }
@@ -398,9 +411,12 @@ fun MapScreen(
                         when {
                             pendingFocus != null -> {
                                 viewModel.pendingFocusLatLon = null
-                                libMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                                    LatLng(pendingFocus.first, pendingFocus.second), 15.0
-                                ))
+                                val zoomTo = maxOf(libMap.cameraPosition.zoom, 14.0)
+                                libMap.animateCamera(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(pendingFocus.first, pendingFocus.second), zoomTo
+                                    ), 450, null
+                                )
                             }
                             savedCamera != null -> libMap.cameraPosition = CameraPosition.Builder()
                                 .target(LatLng(savedCamera.first, savedCamera.second))
@@ -409,7 +425,7 @@ fun MapScreen(
                             pendingGps != null -> {
                                 libMap.cameraPosition = CameraPosition.Builder()
                                     .target(LatLng(pendingGps.first, pendingGps.second))
-                                    .zoom(13.0)
+                                    .zoom(11.0)
                                     .build()
                                 mapHolder.pendingCameraTarget = null
                             }
