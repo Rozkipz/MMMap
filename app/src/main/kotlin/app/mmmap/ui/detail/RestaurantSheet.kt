@@ -55,7 +55,7 @@ fun RestaurantSheet(
     viewModel: DetailViewModel = hiltViewModel(),
 ) {
     val isVisited by viewModel.isVisited.collectAsState()
-    LaunchedEffect(restaurant.id) { viewModel.loadEnrichment(restaurant) }
+    LaunchedEffect(restaurant.id) { viewModel.setCurrentRestaurant(restaurant) }
     RestaurantSheetContent(
         restaurant = restaurant,
         onDismiss = onDismiss,

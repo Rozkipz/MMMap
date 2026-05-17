@@ -52,15 +52,6 @@ adb shell screencap -p /sdcard/shot.png && adb pull /sdcard/shot.png 1.png
 
 ---
 
-### 3. Rotate the Foursquare API key
-
-The key in `local.properties` was visible during the build audit. Before making the repo public, generate a new one at https://foursquare.com/developers and replace it:
-
-```sh
-# in local.properties
-fsq.api.key=YOUR_NEW_KEY_HERE
-```
-
 ---
 
 ## Submitting to fdroiddata
@@ -131,8 +122,7 @@ Plots every MICHELIN Guide restaurant on an offline-first MapLibre map.
 No GMS, no Firebase, no Mapbox. Fully self-hostable data via GitHub CSV sync.
 
 ### Anti-features
-- `NonFreeNet`: optional Foursquare enrichment (user-supplied key) and
-  dataset refresh from raw.githubusercontent.com.
+- `NonFreeNet`: dataset refresh from raw.githubusercontent.com and map tiles from tiles.openfreemap.org.
 
 ### Reproducibility
 Build instructions are in BUILDING.md. The release APK is signed by upstream;

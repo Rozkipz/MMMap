@@ -4,11 +4,11 @@ Features:
 • Browse all MICHELIN Guide restaurants on an offline-first map (data bundled, no account required)
 • Filter by distinction (★★★ / ★★ / ★ / Bib Gourmand / Selected)
 • Filter by cuisine and price range
-• Tap any pin for details: photos, opening hours, phone, website
+• Tap any pin for details: phone, website, cuisine, and facilities from the MICHELIN dataset
 • Near Me — instantly see top restaurants sorted by your distance
 • Direct deep-link to each restaurant's official MICHELIN Guide page
 • Mark restaurants as visited; export and import your visited list
 
 Privacy: no tracking, no analytics, no account required.
 
-Note: optional Foursquare enrichment (photos, hours, ratings) requires a free Foursquare API key entered in Settings. Dataset updates are fetched from GitHub when available.
+Note: dataset updates are fetched from GitHub when available.

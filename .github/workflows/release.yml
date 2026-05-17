@@ -52,11 +52,6 @@ jobs:
           printf 'storeFile=mmmap-release.jks\nstorePassword=%s\nkeyAlias=mmmap\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > keystore.properties
 
-      - name: Write API keys
-        env:
-          FSQ_API_KEY: ${{ secrets.FSQ_API_KEY }}
-        run: echo "fsq.api.key=$FSQ_API_KEY" >> local.properties
-
       - name: Assemble release APK
         run: just assemble-release ${{ inputs.version }} ${{ steps.ver.outputs.code }}
 
