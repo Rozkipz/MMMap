@@ -2,7 +2,6 @@ package app.mmmap.ui
 
 import android.content.Context
 import android.location.LocationManager
-import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.prefs.MapCachePreferences
 import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.repository.VisitedRepository
@@ -48,7 +47,6 @@ class MapViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val repo: RestaurantRepository = mockk(relaxed = true)
     private val context: Context = mockk(relaxed = true)
-    private val apiKeyPrefs: ApiKeyPreferences = mockk(relaxed = true)
     private val syncPrefs: SyncPreferences = mockk(relaxed = true)
     private val tileCacheManager: TileCacheManager = mockk(relaxed = true)
     private val workManager: WorkManager = mockk(relaxed = true)
@@ -66,9 +64,8 @@ class MapViewModelTest {
         coEvery { repo.distinctCuisines() } returns listOf("French", "Japanese")
         coEvery { repo.distinctPrices() } returns listOf("£", "££", "£££")
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
-        every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
         every { tileCacheManager.maxSizeMb } returns flowOf(MapCachePreferences.DEFAULT_CACHE_MB)
-        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        vm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
     }
 
     @After fun tearDown() {
@@ -187,7 +184,7 @@ class MapViewModelTest {
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(listOf(r1, r2))
         every { visitedRepo.visitedIds } returns flowOf(setOf("r1"))
 
-        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
         val emissions = mutableListOf<List<Restaurant>>()
         val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
 
@@ -205,7 +202,7 @@ class MapViewModelTest {
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(listOf(r1, r2))
         every { visitedRepo.visitedIds } returns flowOf(setOf("r1"))
 
-        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
         val emissions = mutableListOf<List<Restaurant>>()
         val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
 
@@ -225,7 +222,7 @@ class MapViewModelTest {
         val visitedFlow = MutableStateFlow(emptySet<String>())
         every { visitedRepo.visitedIds } returns visitedFlow
 
-        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
         val emissions = mutableListOf<List<Restaurant>>()
         val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
 
@@ -264,12 +261,6 @@ class MapViewModelTest {
         assertNull(vm.lastCameraPosition)
     }
 
-    @Test fun saveFoursquareKey_delegatesToPrefs() = runTest {
-        vm.saveFoursquareKey("my-api-key")
-        advanceUntilIdle()
-        coVerify { apiKeyPrefs.setFsqApiKey("my-api-key") }
-    }
-
     @Test fun debugStateDataClassEquality() {
         val bounds = MapBounds(1.0, 2.0, 3.0, 4.0)
         val filters = MapFilters()
@@ -290,19 +281,11 @@ class MapViewModelTest {
         assertEquals(state1.lastCsvSha, "abc12345")
     }
 
-    @Test fun foursquareKey_defaultsToBuildConfig() = runTest {
-        val keys = mutableListOf<String>()
-        val job = vm.foursquareKey.onEach { keys.add(it) }.launchIn(this)
-        advanceUntilIdle()
-        assertTrue(keys.isNotEmpty())
-        job.cancel()
-    }
-
     // ── tile cache ────────────────────────────────────────────────────────────
 
     @Test fun cacheSizeMb_emitsFromTileCacheManager() = runTest {
         every { tileCacheManager.maxSizeMb } returns flowOf(500L)
-        val freshVm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
         val values = mutableListOf<Long>()
         val job = freshVm.cacheSizeMb.onEach { values.add(it) }.launchIn(this)
         advanceUntilIdle()

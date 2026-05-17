@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Tune
@@ -78,7 +77,6 @@ import app.mmmap.ui.detail.RestaurantSheet
 import app.mmmap.ui.dotColor
 import app.mmmap.ui.settings.CacheSettingsDialog
 import app.mmmap.ui.theme.StarGold
-import app.mmmap.ui.settings.FoursquareKeyDialog
 import app.mmmap.ui.theme.UserGrey
 import kotlinx.coroutines.launch
 import org.maplibre.android.MapLibre
@@ -224,12 +222,10 @@ fun MapScreen(
     val isLocating         by viewModel.isLocating.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope = rememberCoroutineScope()
-    val foursquareKey     by viewModel.foursquareKey.collectAsState()
     val cacheSizeMb       by viewModel.cacheSizeMb.collectAsState()
     val debugState        by viewModel.debugState.collectAsState()
     var menuExpanded      by remember { mutableStateOf(false) }
     var showAbout         by remember { mutableStateOf(false) }
-    var showKeyDialog     by remember { mutableStateOf(false) }
     var showCacheDialog   by remember { mutableStateOf(false) }
     var showDebug         by remember { mutableStateOf(false) }
     var showFiltersSheet  by remember { mutableStateOf(false) }
@@ -519,11 +515,6 @@ fun MapScreen(
                         onDismissRequest = { menuExpanded = false },
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Foursquare API Key") },
-                            leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
-                            onClick = { showKeyDialog = true; menuExpanded = false },
-                        )
-                        DropdownMenuItem(
                             text = { Text("Map cache") },
                             leadingIcon = { Icon(Icons.Default.Storage, contentDescription = null) },
                             onClick = { showCacheDialog = true; menuExpanded = false },
@@ -596,14 +587,6 @@ fun MapScreen(
 
     if (showAbout) {
         AboutDialog(onDismiss = { showAbout = false })
-    }
-
-    if (showKeyDialog) {
-        FoursquareKeyDialog(
-            currentKey = foursquareKey,
-            onSave = { key -> viewModel.saveFoursquareKey(key); showKeyDialog = false },
-            onDismiss = { showKeyDialog = false },
-        )
     }
 
     if (showCacheDialog) {

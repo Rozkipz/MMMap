@@ -4,21 +4,18 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import app.mmmap.data.db.dao.FoursquareCacheDao
 import app.mmmap.data.db.dao.RestaurantDao
 import app.mmmap.data.db.dao.VisitedDao
-import app.mmmap.data.db.entities.FoursquareCacheEntity
 import app.mmmap.data.db.entities.RestaurantEntity
 import app.mmmap.data.db.entities.VisitedRestaurantEntity
 
 @Database(
-    entities = [RestaurantEntity::class, FoursquareCacheEntity::class, VisitedRestaurantEntity::class],
-    version = 2,
+    entities = [RestaurantEntity::class, VisitedRestaurantEntity::class],
+    version = 3,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun restaurantDao(): RestaurantDao
-    abstract fun foursquareCacheDao(): FoursquareCacheDao
     abstract fun visitedDao(): VisitedDao
 
     companion object {
@@ -37,6 +34,12 @@ abstract class AppDatabase : RoomDatabase() {
                         visited_at INTEGER NOT NULL
                     )
                 """.trimIndent())
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS foursquare_cache")
             }
         }
     }

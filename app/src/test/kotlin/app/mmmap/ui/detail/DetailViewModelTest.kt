@@ -1,12 +1,8 @@
 package app.mmmap.ui.detail
 
-import app.mmmap.data.prefs.ApiKeyPreferences
-import app.mmmap.data.repository.EnrichmentRepository
 import app.mmmap.data.repository.VisitedRepository
 import app.mmmap.domain.model.Distinction
-import app.mmmap.domain.model.FoursquareDetail
 import app.mmmap.domain.model.Restaurant
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -19,9 +15,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -30,95 +24,18 @@ import org.junit.Test
 class DetailViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
-    private val enrichmentRepo: EnrichmentRepository = mockk(relaxed = true)
     private val visitedRepo: VisitedRepository = mockk(relaxed = true) {
         every { observeIsVisited(any()) } returns flowOf(false)
-    }
-    private val apiKeyPrefs: ApiKeyPreferences = mockk {
-        every { fsqApiKey } returns flowOf("test-key")
     }
     private lateinit var vm: DetailViewModel
 
     @Before fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        vm = DetailViewModel(enrichmentRepo, visitedRepo, apiKeyPrefs)
+        vm = DetailViewModel(visitedRepo)
     }
 
     @After fun tearDown() {
         Dispatchers.resetMain()
-    }
-
-    @Test fun initialEnrichmentNull() {
-        assertNull(vm.enrichment.value)
-    }
-
-    @Test fun initialLoadingFalse() {
-        assertFalse(vm.loading.value)
-    }
-
-    @Test fun loadEnrichment_setsEnrichmentFromRepo() = runTest {
-        val detail = detail(photoUrl = "https://img.example.com/1.jpg")
-        coEvery { enrichmentRepo.get(any(), any(), any(), any()) } returns detail
-
-        vm.loadEnrichment(restaurant("r1"))
-        advanceUntilIdle()
-
-        assertEquals(detail, vm.enrichment.value)
-    }
-
-    @Test fun loadEnrichment_loadingFalseAfterCompletion() = runTest {
-        coEvery { enrichmentRepo.get(any(), any(), any(), any()) } returns null
-
-        vm.loadEnrichment(restaurant("r1"))
-        advanceUntilIdle()
-
-        assertFalse(vm.loading.value)
-    }
-
-    @Test fun loadEnrichment_nullResultSetsNullEnrichment() = runTest {
-        coEvery { enrichmentRepo.get(any(), any(), any(), any()) } returns null
-
-        vm.loadEnrichment(restaurant("r1"))
-        advanceUntilIdle()
-
-        assertNull(vm.enrichment.value)
-    }
-
-    @Test fun loadEnrichment_passesRestaurantFieldsToRepo() = runTest {
-        coEvery { enrichmentRepo.get(any(), any(), any(), any()) } returns null
-
-        vm.loadEnrichment(restaurant("r1", name = "Le Test", lat = 48.87, lon = 2.33))
-        advanceUntilIdle()
-
-        coVerify { enrichmentRepo.get("r1", "Le Test", 48.87, 2.33) }
-    }
-
-    @Test fun loadEnrichment_secondCallOverwritesFirst() = runTest {
-        val first  = detail(photoUrl = "https://first.jpg")
-        val second = detail(photoUrl = "https://second.jpg")
-        coEvery { enrichmentRepo.get("r1", any(), any(), any()) } returns first
-        coEvery { enrichmentRepo.get("r2", any(), any(), any()) } returns second
-
-        vm.loadEnrichment(restaurant("r1"))
-        advanceUntilIdle()
-        vm.loadEnrichment(restaurant("r2"))
-        advanceUntilIdle()
-
-        assertEquals(second, vm.enrichment.value)
-    }
-
-    @Test fun loadEnrichment_noKey_doesNotFetchOrLoad() = runTest {
-        // BuildConfig.FSQ_API_KEY is non-blank when local.properties is present (dev machine).
-        // This test only makes sense in CI where no key is compiled in.
-        org.junit.Assume.assumeTrue(app.mmmap.BuildConfig.FSQ_API_KEY.isBlank())
-        every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
-
-        vm.loadEnrichment(restaurant("r1"))
-        advanceUntilIdle()
-
-        assertFalse(vm.loading.value)
-        assertNull(vm.enrichment.value)
-        coVerify(exactly = 0) { enrichmentRepo.get(any(), any(), any(), any()) }
     }
 
     // ── visited state ─────────────────────────────────────────────────────────
@@ -159,13 +76,5 @@ class DetailViewModelTest {
         cuisine = null, price = null, phoneNumber = null,
         michelinUrl = "https://guide.michelin.com/$id",
         websiteUrl = null, description = null, facilitiesAndServices = null,
-    )
-
-    private fun detail(photoUrl: String? = null) = FoursquareDetail(
-        photoUrl = photoUrl,
-        openingHours = emptyList(),
-        isOpenNow = null,
-        phone = null,
-        rating = null,
     )
 }

@@ -54,18 +54,6 @@ fun AboutDialog(onDismiss: () -> Unit) {
                     url = "https://openfreemap.org",
                     onOpen = ::open,
                 )
-                LabelledLink(
-                    label = "Dark map tiles",
-                    linkText = "© CARTO (CC-BY 3.0)",
-                    url = "https://carto.com/attributions",
-                    onOpen = ::open,
-                )
-                LabelledLink(
-                    label = "Venue details",
-                    linkText = "Foursquare Places API",
-                    url = "https://foursquare.com/developer",
-                    onOpen = ::open,
-                )
                 Text(
                     "Map data © OpenStreetMap contributors",
                     style = MaterialTheme.typography.bodySmall,

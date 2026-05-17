@@ -1,7 +1,6 @@
 package app.mmmap.di
 
 import app.mmmap.BuildConfig
-import app.mmmap.data.remote.FoursquareApi
 import app.mmmap.data.remote.GitHubContentsApi
 import dagger.Module
 import dagger.Provides
@@ -35,12 +34,6 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @Named("foursquare")
-    fun provideFoursquareRetrofit(client: OkHttpClient, json: Json): Retrofit =
-        retrofit(FoursquareApi.BASE_URL, client, json)
-
-    @Provides
-    @Singleton
     @Named("github")
     fun provideGitHubRetrofit(client: OkHttpClient, json: Json): Retrofit =
         retrofit(GitHubContentsApi.BASE_URL, client, json)
@@ -51,11 +44,6 @@ object NetworkModule {
             .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
-
-    @Provides
-    @Singleton
-    fun provideFoursquareApi(@Named("foursquare") retrofit: Retrofit): FoursquareApi =
-        retrofit.create(FoursquareApi::class.java)
 
     @Provides
     @Singleton

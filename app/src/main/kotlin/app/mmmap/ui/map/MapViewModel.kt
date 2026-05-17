@@ -19,9 +19,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import app.mmmap.BuildConfig
 import app.mmmap.data.db.entities.VisitedRestaurantEntity
-import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.repository.VisitedRepository
 import kotlinx.serialization.encodeToString
@@ -41,7 +39,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,7 +77,6 @@ data class DebugState(
 class MapViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val repo: RestaurantRepository,
-    private val apiKeyPrefs: ApiKeyPreferences,
     private val syncPrefs: SyncPreferences,
     private val tileCacheManager: TileCacheManager,
     private val workManager: WorkManager,
@@ -120,15 +116,6 @@ class MapViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val selectedRestaurant = MutableStateFlow<Restaurant?>(null)
-
-    // Effective Foursquare API key: DataStore override → build-time key from local.properties
-    val foursquareKey: StateFlow<String> = apiKeyPrefs.fsqApiKey
-        .map { stored -> stored?.takeIf { it.isNotBlank() } ?: BuildConfig.FSQ_API_KEY }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BuildConfig.FSQ_API_KEY)
-
-    fun saveFoursquareKey(key: String) {
-        viewModelScope.launch { apiKeyPrefs.setFsqApiKey(key) }
-    }
 
     val cacheSizeMb: StateFlow<Long> = tileCacheManager.maxSizeMb
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 100L)

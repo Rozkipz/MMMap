@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Room
 import androidx.work.WorkManager
 import app.mmmap.data.db.AppDatabase
-import app.mmmap.data.db.dao.FoursquareCacheDao
 import app.mmmap.data.db.dao.RestaurantDao
 import app.mmmap.data.db.dao.VisitedDao
 import dagger.Module
@@ -24,12 +23,10 @@ object DatabaseModule {
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DB_NAME)
             .createFromAsset(AppDatabase.DB_NAME)
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
 
     @Provides fun provideRestaurantDao(db: AppDatabase): RestaurantDao = db.restaurantDao()
-
-    @Provides fun provideFoursquareCacheDao(db: AppDatabase): FoursquareCacheDao = db.foursquareCacheDao()
 
     @Provides fun provideVisitedDao(db: AppDatabase): VisitedDao = db.visitedDao()
 
