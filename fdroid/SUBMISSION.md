@@ -28,7 +28,7 @@ Install the app on a device or emulator (`just run`), then capture the following
 |---|---|
 | 1 | Map with restaurant pins visible |
 | 2 | Filter sheet open (award/cuisine/price chips) |
-| 3 | Restaurant detail sheet (name, award, photo) |
+| 3 | Restaurant detail sheet (name, award, cuisine, facilities) |
 | 4 | Near Me list |
 | 5 | Visited list or Settings screen |
 
@@ -52,11 +52,9 @@ adb shell screencap -p /sdcard/shot.png && adb pull /sdcard/shot.png 1.png
 
 ---
 
----
-
 ## Submitting to fdroiddata
 
-### 4. Fork fdroiddata
+### 3. Fork fdroiddata
 
 ```sh
 # on GitLab: fork https://gitlab.com/fdroid/fdroiddata
@@ -68,7 +66,7 @@ git fetch upstream
 git checkout -b add-app.mmmap upstream/master
 ```
 
-### 5. Install fdroidserver (for local validation)
+### 4. Install fdroidserver (for local validation)
 
 ```sh
 pip install fdroidserver
@@ -76,7 +74,7 @@ pip install fdroidserver
 sudo apt install fdroidserver
 ```
 
-### 6. Copy and validate the metadata
+### 5. Copy and validate the metadata
 
 ```sh
 cp /path/to/MMMap/fdroid/app.mmmap.yml metadata/app.mmmap.yml
@@ -89,7 +87,7 @@ fdroid lint app.mmmap
 # expected: no errors
 ```
 
-### 7. (Optional) Test the build locally with Docker
+### 6. (Optional) Test the build locally with Docker
 
 Requires Docker and fdroidserver with the build VM image:
 
@@ -99,7 +97,7 @@ fdroid build --on-server --no-tarball --verbose app.mmmap
 
 This simulates exactly what F-Droid's build server will do. Fix any build failures before submitting.
 
-### 8. Open the Merge Request
+### 7. Open the Merge Request
 
 ```sh
 git add metadata/app.mmmap.yml
