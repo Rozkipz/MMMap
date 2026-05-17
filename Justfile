@@ -14,9 +14,12 @@ default:
 build:
     {{gradle}} assembleDebug
 
-# Install APK on a connected device or emulator
-install variant='debug':
+# Install release APK on a connected device or emulator
+install variant='release':
     {{gradle}} install{{capitalize(variant)}}
+
+# Install debug APK on a connected device or emulator
+installdebug: (install "debug")
 
 # Install debug build and launch (use `just run release` to install the release build)
 run variant='debug': (install variant)
