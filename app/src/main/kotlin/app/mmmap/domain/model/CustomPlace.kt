@@ -7,4 +7,6 @@ data class CustomPlace(
     val longitude: Double,
     val address: String? = null,
     val notes: String? = null,
+    val description: String? = null,
+    val link: String? = null,
 )

@@ -42,12 +42,14 @@ class CustomPlaceRepository @Inject constructor(
         Json.parseToJsonElement(text).jsonArray.map { element ->
             val obj = element.jsonObject
             CustomPlace(
-                id        = obj["id"]!!.jsonPrimitive.content,
-                name      = obj["name"]!!.jsonPrimitive.content,
-                latitude  = obj["latitude"]!!.jsonPrimitive.double,
-                longitude = obj["longitude"]!!.jsonPrimitive.double,
-                address   = obj["address"].nullableString(),
-                notes     = obj["notes"].nullableString(),
+                id          = obj["id"]!!.jsonPrimitive.content,
+                name        = obj["name"]!!.jsonPrimitive.content,
+                latitude    = obj["latitude"]!!.jsonPrimitive.double,
+                longitude   = obj["longitude"]!!.jsonPrimitive.double,
+                address     = obj["address"].nullableString(),
+                notes       = obj["notes"].nullableString(),
+                description = obj["description"].nullableString(),
+                link        = obj["link"].nullableString(),
             )
         }
     }

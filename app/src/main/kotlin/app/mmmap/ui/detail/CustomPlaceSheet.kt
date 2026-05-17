@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,8 +82,13 @@ internal fun CustomPlaceSheetContent(
                 Text(address, style = MaterialTheme.typography.bodySmall)
             }
 
-            place.notes?.let { notes ->
+            place.description?.let { desc ->
                 Spacer(Modifier.height(12.dp))
+                Text(desc, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            place.notes?.let { notes ->
+                Spacer(Modifier.height(8.dp))
                 Text(notes, style = MaterialTheme.typography.bodyMedium)
             }
 
@@ -117,6 +123,18 @@ internal fun CustomPlaceSheetContent(
                         contentDescription = "Directions",
                         modifier = Modifier.size(28.dp),
                     )
+                }
+                place.link?.let { url ->
+                    IconButton(
+                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
+                        modifier = Modifier.size(56.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Public,
+                            contentDescription = "Open website",
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
                 }
             }
 
