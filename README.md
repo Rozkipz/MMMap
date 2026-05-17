@@ -119,7 +119,6 @@ All dependencies are either Apache 2.0, MIT, or LGPL-licensed — fully F-Droid-
 - [x] F-Droid distribution (metadata ready, submission pending)
 - [ ] Country selector to narrow the dataset
 - [ ] Offline tile bundles for full offline use
-- [ ] IzzyOnDroid distribution
 
 ---
 

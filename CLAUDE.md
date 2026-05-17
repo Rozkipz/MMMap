@@ -117,6 +117,6 @@ Use `TestScope(testDispatcher)` + `testScope.runTest { }` for classes that need 
 ## Distribution plan
 
 Phase 1 (current): self-hosted GitHub Releases APK (`just release <version>`).
-Phase 2 (deferred): F-Droid + IzzyOnDroid — stack is already compatible (no GMS/Firebase/Mapbox).
+Phase 2 (deferred): F-Droid — stack is already compatible (no GMS/Firebase/Mapbox).
 
 `just deps-audit` checks for proprietary lib leakage.
