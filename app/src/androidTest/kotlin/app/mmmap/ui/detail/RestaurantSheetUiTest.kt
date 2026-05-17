@@ -15,7 +15,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.mmmap.domain.model.Distinction
-import app.mmmap.domain.model.FoursquareDetail
 import app.mmmap.domain.model.Restaurant
 import org.junit.Rule
 import org.junit.Test
@@ -34,14 +33,14 @@ class RestaurantSheetUiTest {
 
     @Test fun greenStarShown_whenTrue() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(greenStar = true), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(greenStar = true), onDismiss = {})
         }
         compose.onNodeWithText("Green Star", substring = true).assertIsDisplayed()
     }
 
     @Test fun greenStarHidden_whenFalse() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(greenStar = false), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(greenStar = false), onDismiss = {})
         }
         assertTrue(compose.onAllNodesWithText("Green Star", substring = true).fetchSemanticsNodes().isEmpty())
     }
@@ -52,7 +51,7 @@ class RestaurantSheetUiTest {
         compose.setContent {
             RestaurantSheetContent(
                 restaurant(facilities = "Car park,Interesting wine list"),
-                onDismiss = {}, enrichment = null, loading = false,
+                onDismiss = {},
             )
         }
         compose.onNodeWithText("Car park").performScrollTo().assertIsDisplayed()
@@ -63,7 +62,7 @@ class RestaurantSheetUiTest {
         compose.setContent {
             RestaurantSheetContent(
                 restaurant(facilities = " Air conditioning , Wheelchair access "),
-                onDismiss = {}, enrichment = null, loading = false,
+                onDismiss = {},
             )
         }
         compose.onNodeWithText("Air conditioning").performScrollTo().assertIsDisplayed()
@@ -72,14 +71,14 @@ class RestaurantSheetUiTest {
 
     @Test fun facilitiesChips_nullFacilities_noChipsNocrash() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(facilities = null), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(facilities = null), onDismiss = {})
         }
         compose.onNodeWithText("Test Restaurant").assertIsDisplayed()
     }
 
     @Test fun facilitiesChips_emptyString_noChips() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(facilities = ""), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(facilities = ""), onDismiss = {})
         }
         compose.onNodeWithText("Test Restaurant").assertIsDisplayed()
     }
@@ -88,35 +87,35 @@ class RestaurantSheetUiTest {
 
     @Test fun badgeLabel_threeStar() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(distinction = Distinction.THREE_STAR), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(distinction = Distinction.THREE_STAR), onDismiss = {})
         }
         compose.onNodeWithText("3 Stars", substring = true).assertIsDisplayed()
     }
 
     @Test fun badgeLabel_twoStar() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(distinction = Distinction.TWO_STAR), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(distinction = Distinction.TWO_STAR), onDismiss = {})
         }
         compose.onNodeWithText("2 Stars", substring = true).assertIsDisplayed()
     }
 
     @Test fun badgeLabel_oneStar() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(distinction = Distinction.ONE_STAR), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(distinction = Distinction.ONE_STAR), onDismiss = {})
         }
         compose.onNodeWithText("1 Star", substring = true).assertIsDisplayed()
     }
 
     @Test fun badgeLabel_bibGourmand() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(distinction = Distinction.BIB_GOURMAND), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(distinction = Distinction.BIB_GOURMAND), onDismiss = {})
         }
         compose.onNodeWithText("Bib Gourmand", substring = true).assertIsDisplayed()
     }
 
     @Test fun badgeLabel_selected() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(distinction = Distinction.SELECTED), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(distinction = Distinction.SELECTED), onDismiss = {})
         }
         compose.onNodeWithText("MICHELIN Selected", substring = true).assertIsDisplayed()
     }
@@ -125,69 +124,53 @@ class RestaurantSheetUiTest {
 
     @Test fun websiteButton_shownWhenUrlPresent() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(websiteUrl = "https://example.com"), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(websiteUrl = "https://example.com"), onDismiss = {})
         }
         compose.onNodeWithContentDescription("Website").assertIsDisplayed()
     }
 
     @Test fun websiteButton_hiddenWhenUrlNull() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(websiteUrl = null), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(websiteUrl = null), onDismiss = {})
         }
         assertTrue(compose.onAllNodesWithContentDescription("Website").fetchSemanticsNodes().isEmpty())
     }
 
     @Test fun phoneButton_shownFromRestaurantData() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(phone = "+44 20 0000 0000"), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(phone = "+44 20 0000 0000"), onDismiss = {})
         }
         compose.onNodeWithContentDescription("Call").assertIsDisplayed()
     }
 
-    @Test fun phoneButton_hiddenWhenNullAndNoEnrichment() {
+    @Test fun phoneButton_hiddenWhenNull() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(phone = null), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(phone = null), onDismiss = {})
         }
         assertTrue(compose.onAllNodesWithContentDescription("Call").fetchSemanticsNodes().isEmpty())
     }
 
-    @Test fun phoneButton_shownFromEnrichment() {
-        val enrichment = FoursquareDetail(null, emptyList(), null, "+33 1 00 00 00 00", null)
-        compose.setContent {
-            RestaurantSheetContent(restaurant(phone = null), onDismiss = {}, enrichment = enrichment, loading = false)
-        }
-        compose.onNodeWithContentDescription("Call").assertIsDisplayed()
-    }
-
     @Test fun michelinGuideButton_alwaysPresent() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(), onDismiss = {})
         }
         compose.onNodeWithText("Open in MICHELIN Guide", substring = true)
             .performScrollTo()
             .assertIsDisplayed()
     }
 
-    @Test fun loadingIndicator_shownWhenLoadingAndNoPhoto() {
-        compose.setContent {
-            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = null, loading = true)
-        }
-        // CircularProgressIndicator has no text, but its parent exists — just verify no crash
-        compose.onNodeWithText("Test Restaurant").assertIsDisplayed()
-    }
-
     // --- "I've been here" toggle ---
 
     @Test fun beenHereCheckbox_displayed() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = null, loading = false)
+            RestaurantSheetContent(restaurant(), onDismiss = {})
         }
         compose.onNodeWithText("I've been here").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun beenHereCheckbox_uncheckedWhenNotVisited() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = null, loading = false, isVisited = false)
+            RestaurantSheetContent(restaurant(), onDismiss = {}, isVisited = false)
         }
         // The Checkbox node itself is the toggleable element
         compose.onNodeWithText("I've been here").performScrollTo()
@@ -196,7 +179,7 @@ class RestaurantSheetUiTest {
 
     @Test fun beenHereCheckbox_checkedWhenVisited() {
         compose.setContent {
-            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = null, loading = false, isVisited = true)
+            RestaurantSheetContent(restaurant(), onDismiss = {}, isVisited = true)
         }
         compose.onNodeWithText("I've been here").performScrollTo()
         compose.onNode(isToggleable()).assertIsOn()
@@ -206,7 +189,7 @@ class RestaurantSheetUiTest {
         var callbackValue: Boolean? = null
         compose.setContent {
             RestaurantSheetContent(
-                restaurant(), onDismiss = {}, enrichment = null, loading = false,
+                restaurant(), onDismiss = {},
                 isVisited = false, onVisitedChange = { callbackValue = it },
             )
         }
@@ -218,28 +201,12 @@ class RestaurantSheetUiTest {
         var callbackValue: Boolean? = null
         compose.setContent {
             RestaurantSheetContent(
-                restaurant(), onDismiss = {}, enrichment = null, loading = false,
+                restaurant(), onDismiss = {},
                 isVisited = true, onVisitedChange = { callbackValue = it },
             )
         }
         compose.onNodeWithText("I've been here").performScrollTo().performClick()
         assertEquals(false, callbackValue)
-    }
-
-    @Test fun openNowLabel_shownFromEnrichment() {
-        val enrichment = FoursquareDetail(null, listOf("Mon-Fri 12:00-22:00"), isOpenNow = true, null, null)
-        compose.setContent {
-            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = enrichment, loading = false)
-        }
-        compose.onNodeWithText("Open now", substring = true).performScrollTo().assertIsDisplayed()
-    }
-
-    @Test fun closedLabel_shownFromEnrichment() {
-        val enrichment = FoursquareDetail(null, listOf("Mon-Fri 12:00-22:00"), isOpenNow = false, null, null)
-        compose.setContent {
-            RestaurantSheetContent(restaurant(), onDismiss = {}, enrichment = enrichment, loading = false)
-        }
-        compose.onNodeWithText("Closed", substring = true).performScrollTo().assertIsDisplayed()
     }
 
     // --- helpers ---

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,7 +22,6 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -44,13 +41,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.mmmap.domain.model.Distinction
-import app.mmmap.domain.model.FoursquareDetail
 import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.badgeColor
 import app.mmmap.ui.badgeLabel
 import app.mmmap.ui.theme.GreenStar
 import app.mmmap.ui.theme.StarGold
-import coil3.compose.AsyncImage
 
 /** ViewModel-connected entry point used by the navigation graph. */
 @Composable
@@ -59,15 +54,11 @@ fun RestaurantSheet(
     onDismiss: () -> Unit,
     viewModel: DetailViewModel = hiltViewModel(),
 ) {
-    val enrichment by viewModel.enrichment.collectAsState()
-    val loading by viewModel.loading.collectAsState()
     val isVisited by viewModel.isVisited.collectAsState()
     LaunchedEffect(restaurant.id) { viewModel.loadEnrichment(restaurant) }
     RestaurantSheetContent(
         restaurant = restaurant,
         onDismiss = onDismiss,
-        enrichment = enrichment,
-        loading = loading,
         isVisited = isVisited,
         onVisitedChange = { viewModel.setVisited(restaurant, it) },
     )
@@ -79,8 +70,6 @@ fun RestaurantSheet(
 internal fun RestaurantSheetContent(
     restaurant: Restaurant,
     onDismiss: () -> Unit,
-    enrichment: FoursquareDetail?,
-    loading: Boolean,
     isVisited: Boolean = false,
     onVisitedChange: (Boolean) -> Unit = {},
 ) {
@@ -89,28 +78,10 @@ internal fun RestaurantSheetContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .verticalScroll(rememberScrollState()),
     ) {
-        // Photo
-        val photoUrl = enrichment?.photoUrl
-        if (photoUrl != null) {
-            AsyncImage(
-                model = photoUrl,
-                contentDescription = restaurant.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-                    .padding(bottom = 12.dp),
-            )
-        } else if (loading) {
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(12.dp),
-            )
-        }
+        // Padded content
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
 
         // Distinction badge + optional Green Star
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -151,27 +122,6 @@ internal fun RestaurantSheetContent(
         Spacer(Modifier.height(8.dp))
         Text(restaurant.address, style = MaterialTheme.typography.bodySmall)
         restaurant.location?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-
-        // Opening hours
-        enrichment?.openingHours?.takeIf { it.isNotEmpty() }?.let { hours ->
-            Spacer(Modifier.height(12.dp))
-            val statusLabel = when (enrichment.isOpenNow) {
-                true  -> "Open now"
-                false -> "Closed"
-                null  -> ""
-            }
-            if (statusLabel.isNotEmpty()) {
-                Text(
-                    statusLabel,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (enrichment.isOpenNow == true)
-                        GreenStar
-                    else
-                        MaterialTheme.colorScheme.error,
-                )
-            }
-            hours.forEach { line -> Text(line, style = MaterialTheme.typography.bodySmall) }
-        }
 
         // Description
         restaurant.description?.let {
@@ -228,7 +178,7 @@ internal fun RestaurantSheetContent(
                     tint = if (isVisited) StarGold else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            val phone = enrichment?.phone ?: restaurant.phoneNumber
+            val phone = restaurant.phoneNumber
             if (phone != null) {
                 IconButton(
                     onClick = {
@@ -268,6 +218,6 @@ internal fun RestaurantSheetContent(
         }
 
         Spacer(Modifier.height(24.dp))
+        } // end padded Column
     }
 }
-

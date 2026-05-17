@@ -9,7 +9,6 @@ import android.location.LocationManager
 import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.work.WorkManager
-import app.mmmap.data.prefs.ApiKeyPreferences
 import app.mmmap.data.prefs.MapCachePreferences
 import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.repository.VisitedRepository
@@ -49,7 +48,6 @@ class MapViewModelLocateTest {
     private val repo = mockk<RestaurantRepository>(relaxed = true)
     private val context = mockk<Context>(relaxed = true)
     private val locationManager = mockk<LocationManager>(relaxed = true)
-    private val apiKeyPrefs = mockk<ApiKeyPreferences>(relaxed = true)
     private val syncPrefs = mockk<SyncPreferences>(relaxed = true)
     private val tileCacheManager = mockk<TileCacheManager>(relaxed = true)
     private val workManager = mockk<WorkManager>(relaxed = true)
@@ -64,7 +62,6 @@ class MapViewModelLocateTest {
         coEvery { repo.distinctCuisines() } returns emptyList()
         coEvery { repo.distinctPrices() } returns emptyList()
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
-        every { apiKeyPrefs.fsqApiKey } returns flowOf(null)
         every { tileCacheManager.maxSizeMb } returns flowOf(MapCachePreferences.DEFAULT_CACHE_MB)
         mockkStatic(ContextCompat::class)
         mockkStatic(Looper::class)
@@ -72,7 +69,7 @@ class MapViewModelLocateTest {
         every { Looper.getMainLooper() } returns mockk(relaxed = true)
         every { locationManager.isProviderEnabled(any()) } returns true
         every { locationManager.getLastKnownLocation(any()) } returns null
-        vm = MapViewModel(context, repo, apiKeyPrefs, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        vm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
     }
 
     @After fun tearDown() {

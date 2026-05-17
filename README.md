@@ -19,7 +19,7 @@
 - **Filter** by award (★★★ / ★★ / ★ / Bib Gourmand / Selected), cuisine, and price tier
 - **Been here** — mark restaurants you've visited; pins glow gold on the map
 - **Near Me** — 50 nearest restaurants sorted by distance from your location
-- **Rich detail** — photos and opening hours via Foursquare; phone number and website from the MICHELIN dataset
+- **Rich detail** — phone number, website, and facilities from the MICHELIN dataset
 - **Deep links** directly to each restaurant's MICHELIN Guide page
 - **Automatic updates** — dataset syncs in the background every 24 hours
 
@@ -68,16 +68,6 @@ Set `JAVA_HOME` to JDK 17 if it is not your system default:
 export JAVA_HOME=/path/to/jdk-17
 ```
 
-### API keys
-
-Create `local.properties` (gitignored — never commit this):
-```
-fsq.api.key=YOUR_FOURSQUARE_API_KEY
-```
-
-Get a free key at [developer.foursquare.com](https://developer.foursquare.com/).
-Place enrichment (photos, hours, phone) is disabled but the map works without a key.
-
 ### Common commands
 
 ```bash
@@ -116,7 +106,6 @@ There are no CLA or sign-off requirements.
 | Networking | Retrofit + OkHttp |
 | DI | Hilt |
 | Background sync | WorkManager |
-| Place enrichment | Foursquare Places API |
 
 All dependencies are either Apache 2.0, MIT, or LGPL-licensed — fully F-Droid-compatible.
 
@@ -143,5 +132,4 @@ This project is licensed under the **MIT License** — see [`LICENSE`](LICENSE) 
 | Source | Licence |
 |--------|---------|
 | Restaurant data: [MICHELIN Guide](https://guide.michelin.com) via [ngshiheng/michelin-my-maps](https://github.com/ngshiheng/michelin-my-maps) | MIT |
-| Place enrichment: [Foursquare Places API](https://developer.foursquare.com/) | Foursquare ToS |
 | Map tiles: [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) | ODbL |
