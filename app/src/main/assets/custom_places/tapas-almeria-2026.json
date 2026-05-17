@@ -3,7 +3,7 @@
     "id": "tapas-almeria-2026/barlovento",
     "name": "Barlovento",
     "latitude": 36.837972,
-    "longitude": -2.475538,
+    "longitude": -2.47270,
     "address": "C/ General Luque, 19, Almería",
     "notes": null
   },
@@ -26,8 +26,8 @@
   {
     "id": "tapas-almeria-2026/bar-habibi",
     "name": "Bar Habibi",
-    "latitude": 36.8388,
-    "longitude": -2.4666,
+    "latitude": 36.84022,
+    "longitude": -2.46212,
     "address": "Circunvalación del Mercado, Almería",
     "notes": null
   },
@@ -74,16 +74,16 @@
   {
     "id": "tapas-almeria-2026/taberna-nuestra-tierra",
     "name": "Taberna Nuestra Tierra",
-    "latitude": 36.840294,
-    "longitude": -2.466156,
+    "latitude": 36.84073,
+    "longitude": -2.46680,
     "address": "Calle Jovellanos, 18, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/kiosco-18-julio",
     "name": "Kiosco 18 Julio",
-    "latitude": 36.835,
-    "longitude": -2.4633,
+    "latitude": 36.84156,
+    "longitude": -2.45865,
     "address": "Plaza de la Concordia, Almería",
     "notes": null
   },
@@ -170,8 +170,8 @@
   {
     "id": "tapas-almeria-2026/la-bellota-el-buey",
     "name": "La Bellota & El Buey",
-    "latitude": 36.84,
-    "longitude": -2.4678,
+    "latitude": 36.8377,
+    "longitude": -2.4568,
     "address": "Calle Gregorio Marañón, 32, Almería",
     "notes": null
   },
@@ -202,16 +202,16 @@
   {
     "id": "tapas-almeria-2026/fausto-vram",
     "name": "Fausto Vram",
-    "latitude": 36.841915,
-    "longitude": -2.453234,
+    "latitude": 36.8375,
+    "longitude": -2.4556,
     "address": "Carretera de Ronda, 82, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/bar-las-tiendas",
     "name": "Bar Las Tiendas",
-    "latitude": 36.832,
-    "longitude": -2.4655,
+    "latitude": 36.8407,
+    "longitude": -2.4659,
     "address": "Calle Las Tiendas, 25, Almería",
     "notes": null
   },
@@ -234,80 +234,80 @@
   {
     "id": "tapas-almeria-2026/900-millas",
     "name": "900 Millas",
-    "latitude": 36.8278,
-    "longitude": -2.4522,
+    "latitude": 36.8358,
+    "longitude": -2.4829,
     "address": "Calle Lorga, 43, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/la-maritma",
     "name": "La Marítma",
-    "latitude": 36.8283,
-    "longitude": -2.4558,
+    "latitude": 36.8390,
+    "longitude": -2.4720,
     "address": "Muelle de Poniente, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/santa-clara",
     "name": "Santa Clara",
-    "latitude": 36.8218,
-    "longitude": -2.4607,
+    "latitude": 36.8255,
+    "longitude": -2.4487,
     "address": "Paseo Marítimo de Almería, 118, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/el-capo-mangia",
     "name": "El Capo Mangia",
-    "latitude": 36.8287,
-    "longitude": -2.4595,
+    "latitude": 36.8270,
+    "longitude": -2.4511,
     "address": "Paseo Marítimo, 78, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/taberna-todo-locura",
     "name": "Taberna Todo Locura",
-    "latitude": 36.83,
-    "longitude": -2.4585,
+    "latitude": 36.8242,
+    "longitude": -2.4452,
     "address": "Avenida Mediterráneo, 3, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/freiduria-la-barca",
     "name": "Freiduría La Barca",
-    "latitude": 36.8305,
-    "longitude": -2.4622,
+    "latitude": 36.8239,
+    "longitude": -2.4465,
     "address": "Paseo Marítimo, 51, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/terraza-costa",
     "name": "Terraza Costa",
-    "latitude": 36.8295,
-    "longitude": -2.4648,
+    "latitude": 36.8278,
+    "longitude": -2.4510,
     "address": "Paseo Marítimo, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/arido-bar",
     "name": "Árido Bar",
-    "latitude": 36.8235,
-    "longitude": -2.4575,
+    "latitude": 36.8239,
+    "longitude": -2.4465,
     "address": "Paseo Marítimo, 115, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/rest-bar-los-carmenes",
     "name": "Rest. Bar Los Cármenes",
-    "latitude": 36.8335,
-    "longitude": -2.454,
+    "latitude": 36.8288,
+    "longitude": -2.4486,
     "address": "Paseo Jaul, 7, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/taller-de-sabores",
     "name": "Taller de Sabores",
-    "latitude": 36.8878,
-    "longitude": -2.4339,
+    "latitude": 36.8713,
+    "longitude": -2.4445,
     "address": "Paraje de la Cepa, 79, Huércal de Almería",
     "notes": null
   },
@@ -322,8 +322,8 @@
   {
     "id": "tapas-almeria-2026/el-vuelo-del-ganso",
     "name": "El Vuelo del Ganso",
-    "latitude": 36.756959,
-    "longitude": -2.750713,
+    "latitude": 36.7631,
+    "longitude": -2.7443,
     "address": "Las Norias de Daza, El Ejido, Almería",
     "notes": null
   },
