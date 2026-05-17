@@ -6,6 +6,7 @@ import app.mmmap.data.places.CustomPlaceCatalog
 import app.mmmap.domain.model.CustomPlaceCollection
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -45,6 +46,34 @@ class CustomPlaceRepositoryTest {
         assertEquals("test/b", places[1].id)
         assertNull(places[1].address)
         assertEquals("Nice spot", places[1].notes)
+    }
+
+    @Test fun loadActive_parsesDescriptionAndLink() = runTest {
+        val json = """
+            [{
+              "id": "test/a", "name": "Bar A", "latitude": 36.838, "longitude": -2.465,
+              "address": null, "notes": null,
+              "description": "A great tapas bar.",
+              "link": "https://example.com/bar-a"
+            }]
+        """.trimIndent()
+
+        val repo = CustomPlaceRepository(contextWithJson(json))
+        val place = repo.loadActive().first()
+
+        assertEquals("A great tapas bar.", place.description)
+        assertEquals("https://example.com/bar-a", place.link)
+    }
+
+    @Test fun loadActive_missingOptionalFields_areNull() = runTest {
+        val json = """[{ "id": "a", "name": "X", "latitude": 1.0, "longitude": 2.0 }]"""
+        val repo = CustomPlaceRepository(contextWithJson(json))
+        val place = repo.loadActive().first()
+
+        assertNull(place.address)
+        assertNull(place.notes)
+        assertNull(place.description)
+        assertNull(place.link)
     }
 
     @Test fun loadActive_cachesOnSecondCall() = runTest {

@@ -8,11 +8,13 @@ import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.repository.VisitedRepository
 import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.map.TileCacheManager
+import app.mmmap.domain.model.CustomPlace
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
 import app.mmmap.ui.map.DebugState
 import app.mmmap.ui.map.MapBounds
 import app.mmmap.ui.map.MapFilters
+import app.mmmap.ui.map.MapMode
 import app.mmmap.ui.map.MapViewModel
 import app.mmmap.ui.map.VisitedFilter
 import androidx.work.WorkManager
@@ -360,6 +362,132 @@ class MapViewModelTest {
         assertEquals("RUNNING", vm.debugState.value?.workerState)
         assertNull(vm.debugState.value?.nextSyncAt)
     }
+
+    // ── custom-places mode ────────────────────────────────────────────────────
+
+    @Test fun setMode_custom_emptiesRestaurantsFlow() = runTest {
+        val list = listOf(restaurant("r1", "Noma"))
+        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(list)
+
+        val emissions = mutableListOf<List<Restaurant>>()
+        val job = vm.restaurants.onEach { emissions.add(it) }.launchIn(this)
+
+        vm.updateBounds(MapBounds(50.0, 52.0, -1.0, 1.0))
+        advanceUntilIdle()
+        assertTrue("expected non-empty list before mode switch", emissions.any { it.isNotEmpty() })
+
+        vm.setMode(MapMode.CUSTOM)
+        advanceUntilIdle()
+        assertEquals(emptyList<Restaurant>(), emissions.last())
+        job.cancel()
+    }
+
+    @Test fun setMode_backToMichelin_restoresRestaurantsFlow() = runTest {
+        val list = listOf(restaurant("r1", "Noma"))
+        every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(list)
+
+        val emissions = mutableListOf<List<Restaurant>>()
+        val job = vm.restaurants.onEach { emissions.add(it) }.launchIn(this)
+
+        vm.updateBounds(MapBounds(50.0, 52.0, -1.0, 1.0))
+        vm.setMode(MapMode.CUSTOM)
+        advanceUntilIdle()
+
+        vm.setMode(MapMode.MICHELIN)
+        advanceUntilIdle()
+        assertTrue("expected restaurants after switching back to MICHELIN", emissions.last().isNotEmpty())
+        job.cancel()
+    }
+
+    @Test fun selectCustomPlace_updatesState() {
+        val place = customPlace("cp1", "Bar A")
+        vm.selectCustomPlace(place)
+        assertEquals(place, vm.selectedCustomPlace.value)
+    }
+
+    @Test fun selectCustomPlace_null_clearsState() {
+        vm.selectCustomPlace(customPlace("cp1", "Bar A"))
+        vm.selectCustomPlace(null)
+        assertNull(vm.selectedCustomPlace.value)
+    }
+
+    @Test fun setCustomPlaceVisited_delegatesToRepo() = runTest {
+        val place = customPlace("tapas-almeria-2026/barlovento", "Barlovento", lat = 36.838, lon = -2.473)
+        vm.setCustomPlaceVisited(place, true)
+        advanceUntilIdle()
+        coVerify {
+            visitedRepo.setVisited(
+                id = "tapas-almeria-2026/barlovento",
+                name = "Barlovento",
+                latitude = 36.838,
+                longitude = -2.473,
+                visited = true,
+            )
+        }
+    }
+
+    @Test fun setCustomPlaceVisited_false_delegatesDeleteToRepo() = runTest {
+        val place = customPlace("tapas-almeria-2026/barlovento", "Barlovento")
+        vm.setCustomPlaceVisited(place, false)
+        advanceUntilIdle()
+        coVerify { visitedRepo.setVisited(id = "tapas-almeria-2026/barlovento", name = any(), latitude = any(), longitude = any(), visited = false) }
+    }
+
+    @Test fun visibleCustomPlaces_visitedFilterShowsOnlyVisited() = runTest {
+        val cp1 = customPlace("cp1", "Bar A")
+        val cp2 = customPlace("cp2", "Bar B")
+        coEvery { customPlaceRepo.loadActive() } returns listOf(cp1, cp2)
+        every { visitedRepo.visitedIds } returns flowOf(setOf("cp1"))
+
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
+        val emissions = mutableListOf<List<CustomPlace>>()
+        val job = freshVm.visibleCustomPlaces.onEach { emissions.add(it) }.launchIn(this)
+
+        freshVm.updateFilters(MapFilters(visitedFilter = VisitedFilter.VISITED_ONLY))
+        advanceUntilIdle()
+
+        assertTrue("expected only visited place", emissions.any { it.size == 1 && it[0].id == "cp1" })
+        job.cancel()
+    }
+
+    @Test fun visibleCustomPlaces_unvisitedFilterShowsOnlyUnvisited() = runTest {
+        val cp1 = customPlace("cp1", "Bar A")
+        val cp2 = customPlace("cp2", "Bar B")
+        coEvery { customPlaceRepo.loadActive() } returns listOf(cp1, cp2)
+        every { visitedRepo.visitedIds } returns flowOf(setOf("cp1"))
+
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
+        val emissions = mutableListOf<List<CustomPlace>>()
+        val job = freshVm.visibleCustomPlaces.onEach { emissions.add(it) }.launchIn(this)
+
+        freshVm.updateFilters(MapFilters(visitedFilter = VisitedFilter.UNVISITED_ONLY))
+        advanceUntilIdle()
+
+        assertTrue("expected only unvisited place", emissions.any { it.size == 1 && it[0].id == "cp2" })
+        job.cancel()
+    }
+
+    @Test fun visibleCustomPlaces_noFilter_showsAll() = runTest {
+        val cp1 = customPlace("cp1", "Bar A")
+        val cp2 = customPlace("cp2", "Bar B")
+        coEvery { customPlaceRepo.loadActive() } returns listOf(cp1, cp2)
+        every { visitedRepo.visitedIds } returns flowOf(setOf("cp1"))
+
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
+        val emissions = mutableListOf<List<CustomPlace>>()
+        val job = freshVm.visibleCustomPlaces.onEach { emissions.add(it) }.launchIn(this)
+        advanceUntilIdle()
+
+        assertTrue("expected all places with no filter", emissions.any { it.size == 2 })
+        job.cancel()
+    }
+
+    private fun customPlace(
+        id: String,
+        name: String,
+        lat: Double = 36.838,
+        lon: Double = -2.465,
+    ) = CustomPlace(id = id, name = name, latitude = lat, longitude = lon)
 
     private fun restaurant(id: String, name: String) = Restaurant(
         id = id, name = name, address = "1 Test St", location = null,
