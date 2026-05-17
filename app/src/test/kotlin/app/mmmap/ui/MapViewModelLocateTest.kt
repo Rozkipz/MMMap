@@ -10,6 +10,7 @@ import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.work.WorkManager
 import app.mmmap.data.prefs.MapCachePreferences
+import app.mmmap.data.repository.CustomPlaceRepository
 import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.repository.VisitedRepository
 import app.mmmap.data.sync.SyncPreferences
@@ -54,6 +55,9 @@ class MapViewModelLocateTest {
     private val visitedRepo = mockk<VisitedRepository>(relaxed = true) {
         every { visitedIds } returns flowOf(emptySet())
     }
+    private val customPlaceRepo = mockk<CustomPlaceRepository>(relaxed = true) {
+        every { activeCollection } returns null
+    }
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
@@ -69,7 +73,7 @@ class MapViewModelLocateTest {
         every { Looper.getMainLooper() } returns mockk(relaxed = true)
         every { locationManager.isProviderEnabled(any()) } returns true
         every { locationManager.getLastKnownLocation(any()) } returns null
-        vm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        vm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
     }
 
     @After fun tearDown() {

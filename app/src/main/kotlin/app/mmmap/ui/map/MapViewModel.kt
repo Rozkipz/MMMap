@@ -20,12 +20,16 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import app.mmmap.data.db.entities.VisitedRestaurantEntity
+import app.mmmap.data.places.CustomPlaceCatalog
+import app.mmmap.data.repository.CustomPlaceRepository
 import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.repository.VisitedRepository
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import app.mmmap.data.sync.DatasetSyncWorker
 import app.mmmap.data.sync.SyncPreferences
+import app.mmmap.domain.model.CustomPlace
+import app.mmmap.domain.model.CustomPlaceCollection
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
 import app.mmmap.map.TileCacheManager
@@ -54,6 +58,7 @@ data class MapBounds(
 )
 
 enum class VisitedFilter { VISITED_ONLY, UNVISITED_ONLY }
+enum class MapMode { MICHELIN, CUSTOM }
 
 data class MapFilters(
     val distinctions: Set<Distinction>? = null,
@@ -81,6 +86,7 @@ class MapViewModel @Inject constructor(
     private val tileCacheManager: TileCacheManager,
     private val workManager: WorkManager,
     private val visitedRepo: VisitedRepository,
+    private val customPlaceRepo: CustomPlaceRepository,
 ) : ViewModel() {
 
     val bounds = MutableStateFlow<MapBounds?>(null)
@@ -92,10 +98,33 @@ class MapViewModel @Inject constructor(
     val visitedRestaurantIds: StateFlow<Set<String>> = visitedRepo.visitedIds
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
+    private val _mode = MutableStateFlow(MapMode.MICHELIN)
+    val mode: StateFlow<MapMode> = _mode
+
+    val customCollection: CustomPlaceCollection? = CustomPlaceCatalog.ACTIVE
+
+    private val _customPlaces = MutableStateFlow<List<CustomPlace>>(emptyList())
+    val customPlaces: StateFlow<List<CustomPlace>> = _customPlaces
+
+    val visibleCustomPlaces: StateFlow<List<CustomPlace>> = combine(
+        _customPlaces, visitedRepo.visitedIds, filters,
+    ) { places, visitedSet, f ->
+        when (f.visitedFilter) {
+            VisitedFilter.VISITED_ONLY   -> places.filter { it.id in visitedSet }
+            VisitedFilter.UNVISITED_ONLY -> places.filter { it.id !in visitedSet }
+            null                         -> places
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val selectedCustomPlace = MutableStateFlow<CustomPlace?>(null)
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val restaurants: StateFlow<List<Restaurant>> = combine(bounds, filters) { b, f -> b to f }
-        .flatMapLatest { (b, f) ->
-            if (b == null) return@flatMapLatest kotlinx.coroutines.flow.flowOf(emptyList<Restaurant>())
+    val restaurants: StateFlow<List<Restaurant>> = combine(bounds, filters, _mode) { b, f, mode ->
+        Triple(b, f, mode)
+    }.flatMapLatest { (b, f, mode) ->
+            if (mode == MapMode.CUSTOM || b == null) {
+                return@flatMapLatest kotlinx.coroutines.flow.flowOf(emptyList<Restaurant>())
+            }
             combine(
                 repo.observeInBounds(
                     minLat = b.minLat, maxLat = b.maxLat,
@@ -213,6 +242,11 @@ class MapViewModel @Inject constructor(
             availableCuisines.value = repo.distinctCuisines()
             availablePrices.value = repo.distinctPrices()
         }
+        if (customCollection != null) {
+            viewModelScope.launch {
+                _customPlaces.value = customPlaceRepo.loadActive()
+            }
+        }
     }
 
     // lat, lon, zoom — persists across tab switches so the map can restore its position
@@ -230,6 +264,19 @@ class MapViewModel @Inject constructor(
     }
 
     fun selectRestaurant(restaurant: Restaurant?) { selectedRestaurant.value = restaurant }
+    fun selectCustomPlace(place: CustomPlace?) { selectedCustomPlace.value = place }
+    fun setMode(mode: MapMode) { _mode.value = mode }
+    fun setCustomPlaceVisited(place: CustomPlace, visited: Boolean) {
+        viewModelScope.launch {
+            visitedRepo.setVisited(
+                id        = place.id,
+                name      = place.name,
+                latitude  = place.latitude,
+                longitude = place.longitude,
+                visited   = visited,
+            )
+        }
+    }
     fun updateBounds(b: MapBounds) { bounds.value = b }
     fun updateFilters(f: MapFilters) { filters.value = f }
 

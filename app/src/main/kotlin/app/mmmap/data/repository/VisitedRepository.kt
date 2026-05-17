@@ -16,20 +16,40 @@ class VisitedRepository @Inject constructor(private val dao: VisitedDao) {
     fun observeIsVisited(id: String): Flow<Boolean> = dao.observeIsVisited(id)
 
     suspend fun setVisited(restaurant: Restaurant, visited: Boolean) {
+        setVisited(
+            id        = restaurant.id,
+            name      = restaurant.name,
+            latitude  = restaurant.latitude,
+            longitude = restaurant.longitude,
+            award     = restaurant.distinction.label,
+            cuisine   = restaurant.cuisine,
+            visited   = visited,
+        )
+    }
+
+    suspend fun setVisited(
+        id: String,
+        name: String,
+        latitude: Double,
+        longitude: Double,
+        award: String? = null,
+        cuisine: String? = null,
+        visited: Boolean,
+    ) {
         if (visited) {
             dao.insert(
                 VisitedRestaurantEntity(
-                    restaurantId = restaurant.id,
-                    name         = restaurant.name,
-                    latitude     = restaurant.latitude,
-                    longitude    = restaurant.longitude,
-                    award        = restaurant.distinction.label,
-                    cuisine      = restaurant.cuisine,
+                    restaurantId = id,
+                    name         = name,
+                    latitude     = latitude,
+                    longitude    = longitude,
+                    award        = award,
+                    cuisine      = cuisine,
                     visitedAt    = System.currentTimeMillis(),
                 )
             )
         } else {
-            dao.delete(restaurant.id)
+            dao.delete(id)
         }
     }
 

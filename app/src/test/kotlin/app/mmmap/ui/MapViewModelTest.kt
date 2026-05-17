@@ -3,6 +3,7 @@ package app.mmmap.ui
 import android.content.Context
 import android.location.LocationManager
 import app.mmmap.data.prefs.MapCachePreferences
+import app.mmmap.data.repository.CustomPlaceRepository
 import app.mmmap.data.repository.RestaurantRepository
 import app.mmmap.data.repository.VisitedRepository
 import app.mmmap.data.sync.SyncPreferences
@@ -53,6 +54,9 @@ class MapViewModelTest {
     private val visitedRepo: VisitedRepository = mockk(relaxed = true) {
         every { visitedIds } returns flowOf(emptySet())
     }
+    private val customPlaceRepo: CustomPlaceRepository = mockk(relaxed = true) {
+        every { activeCollection } returns null
+    }
     private lateinit var vm: MapViewModel
 
     @Before fun setUp() {
@@ -65,7 +69,7 @@ class MapViewModelTest {
         coEvery { repo.distinctPrices() } returns listOf("£", "££", "£££")
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(emptyList())
         every { tileCacheManager.maxSizeMb } returns flowOf(MapCachePreferences.DEFAULT_CACHE_MB)
-        vm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        vm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
     }
 
     @After fun tearDown() {
@@ -184,7 +188,7 @@ class MapViewModelTest {
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(listOf(r1, r2))
         every { visitedRepo.visitedIds } returns flowOf(setOf("r1"))
 
-        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
         val emissions = mutableListOf<List<Restaurant>>()
         val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
 
@@ -202,7 +206,7 @@ class MapViewModelTest {
         every { repo.observeInBounds(any(), any(), any(), any(), any(), any(), any()) } returns flowOf(listOf(r1, r2))
         every { visitedRepo.visitedIds } returns flowOf(setOf("r1"))
 
-        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
         val emissions = mutableListOf<List<Restaurant>>()
         val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
 
@@ -222,7 +226,7 @@ class MapViewModelTest {
         val visitedFlow = MutableStateFlow(emptySet<String>())
         every { visitedRepo.visitedIds } returns visitedFlow
 
-        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
         val emissions = mutableListOf<List<Restaurant>>()
         val job = freshVm.restaurants.onEach { emissions.add(it) }.launchIn(this)
 
@@ -285,7 +289,7 @@ class MapViewModelTest {
 
     @Test fun cacheSizeMb_emitsFromTileCacheManager() = runTest {
         every { tileCacheManager.maxSizeMb } returns flowOf(500L)
-        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo)
+        val freshVm = MapViewModel(context, repo, syncPrefs, tileCacheManager, workManager, visitedRepo, customPlaceRepo)
         val values = mutableListOf<Long>()
         val job = freshVm.cacheSizeMb.onEach { values.add(it) }.launchIn(this)
         advanceUntilIdle()

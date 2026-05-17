@@ -115,4 +115,44 @@ class VisitedRepositoryTest {
 
         coVerify(exactly = 0) { dao.delete(any()) }
     }
+
+    @Test fun setVisited_stringId_true_insertsEntityWithGivenId() = runTest {
+        val slot = slot<VisitedRestaurantEntity>()
+        coJustRun { dao.insert(capture(slot)) }
+
+        repo.setVisited(
+            id = "tapas-almeria-2026/barlovento",
+            name = "Barlovento",
+            latitude = 36.838,
+            longitude = -2.475,
+            visited = true,
+        )
+
+        assertEquals("tapas-almeria-2026/barlovento", slot.captured.restaurantId)
+        assertEquals("Barlovento", slot.captured.name)
+        assertEquals(36.838, slot.captured.latitude, 0.001)
+        assertEquals(-2.475, slot.captured.longitude, 0.001)
+    }
+
+    @Test fun setVisited_stringId_false_deletesById() = runTest {
+        repo.setVisited(
+            id = "tapas-almeria-2026/barlovento",
+            name = "Barlovento",
+            latitude = 36.838,
+            longitude = -2.475,
+            visited = false,
+        )
+
+        coVerify { dao.delete("tapas-almeria-2026/barlovento") }
+    }
+
+    @Test fun setVisited_restaurantDelegate_callsStringOverload() = runTest {
+        val slot = slot<VisitedRestaurantEntity>()
+        coJustRun { dao.insert(capture(slot)) }
+        val r = restaurant(id = "abc123", name = "Le Gavroche")
+
+        repo.setVisited(r, true)
+
+        assertEquals("abc123", slot.captured.restaurantId)
+    }
 }

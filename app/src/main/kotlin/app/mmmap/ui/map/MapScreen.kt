@@ -73,6 +73,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.gson.JsonObject
 import app.mmmap.domain.model.Distinction
 import app.mmmap.domain.model.Restaurant
+import app.mmmap.domain.model.CustomPlace
+import app.mmmap.ui.detail.CustomPlaceSheet
 import app.mmmap.ui.detail.RestaurantSheet
 import app.mmmap.ui.dotColor
 import app.mmmap.ui.settings.CacheSettingsDialog
@@ -104,6 +106,11 @@ private const val PROP_RESTAURANT_ID = "id"
 private const val PROP_DISTINCTION   = "distinction"
 private const val PROP_VISITED       = "visited"
 
+private const val CUSTOM_SOURCE_ID      = "custom-source"
+private const val CUSTOM_LAYER_ID       = "custom-layer"
+private const val CUSTOM_VISITED_GLOW_ID = "custom-visited-glow"
+private const val PROP_CUSTOM_ID        = "customId"
+
 private const val TILE_STYLE_URL      = "https://tiles.openfreemap.org/styles/liberty"
 private const val TILE_STYLE_DARK_URL = "https://tiles.openfreemap.org/styles/dark"
 
@@ -117,6 +124,17 @@ private fun buildCollection(restaurants: List<Restaurant>, visitedIds: Set<Strin
             addProperty(PROP_VISITED, r.id in visitedIds)
         }
         Feature.fromGeometry(Point.fromLngLat(r.longitude, r.latitude), props)
+    }
+    return FeatureCollection.fromFeatures(features)
+}
+
+private fun buildCustomCollection(places: List<CustomPlace>, visitedIds: Set<String>): FeatureCollection {
+    val features = places.map { p ->
+        val props = JsonObject().apply {
+            addProperty(PROP_CUSTOM_ID, p.id)
+            addProperty(PROP_VISITED, p.id in visitedIds)
+        }
+        Feature.fromGeometry(Point.fromLngLat(p.longitude, p.latitude), props)
     }
     return FeatureCollection.fromFeatures(features)
 }
@@ -192,9 +210,48 @@ private fun addCustomLayers(style: Style, mapHolder: MapHolder) {
             PropertyFactory.circleOpacity(1f),
         )
     )
+    // Custom-places source + layers (initially invisible; toggled by mode)
+    val customSource = GeoJsonSource(CUSTOM_SOURCE_ID)
+    style.addSource(customSource)
+    val customVisitedGlow = CircleLayer(CUSTOM_VISITED_GLOW_ID, CUSTOM_SOURCE_ID).withProperties(
+        PropertyFactory.circleRadius(26f),
+        PropertyFactory.circleColor(StarGold.toCssHex()),
+        PropertyFactory.circleBlur(0.9f),
+        PropertyFactory.circleOpacity(0.55f),
+        PropertyFactory.visibility("none"),
+    )
+    customVisitedGlow.setFilter(Expression.eq(Expression.get(PROP_VISITED), Expression.literal(true)))
+    style.addLayer(customVisitedGlow)
+    style.addLayer(
+        CircleLayer(CUSTOM_LAYER_ID, CUSTOM_SOURCE_ID).withProperties(
+            PropertyFactory.circleColor(mapHolder.customAccentColor),
+            PropertyFactory.circleRadius(8f),
+            PropertyFactory.circleStrokeWidth(
+                Expression.switchCase(
+                    Expression.eq(Expression.get(PROP_VISITED), Expression.literal(true)),
+                    Expression.literal(2.5f),
+                    Expression.literal(1.5f),
+                )
+            ),
+            PropertyFactory.circleStrokeColor(
+                Expression.switchCase(
+                    Expression.eq(Expression.get(PROP_VISITED), Expression.literal(true)),
+                    Expression.literal(StarGold.toCssHex()),
+                    Expression.literal("#FFFFFF"),
+                )
+            ),
+            PropertyFactory.circleOpacity(0.9f),
+            PropertyFactory.visibility("none"),
+        )
+    )
+
     mapHolder.pendingRestaurantCollection?.let {
         restaurantSource.setGeoJson(it)
         mapHolder.pendingRestaurantCollection = null
+    }
+    mapHolder.pendingCustomCollection?.let {
+        customSource.setGeoJson(it)
+        mapHolder.pendingCustomCollection = null
     }
     mapHolder.pendingUserLocation?.let { (lat, lon) ->
         userSource.setGeoJson(Feature.fromGeometry(Point.fromLngLat(lon, lat)))
@@ -215,7 +272,10 @@ fun MapScreen(
 ) {
     val restaurants        by viewModel.restaurants.collectAsState()
     val selectedRestaurant by viewModel.selectedRestaurant.collectAsState()
+    val selectedCustomPlace by viewModel.selectedCustomPlace.collectAsState()
     val filters            by viewModel.filters.collectAsState()
+    val mode               by viewModel.mode.collectAsState()
+    val customPlaces       by viewModel.visibleCustomPlaces.collectAsState()
     val availableCuisines  by viewModel.availableCuisines.collectAsState()
     val visitedIds         by viewModel.visitedRestaurantIds.collectAsState()
     val userLatLon         by viewModel.userLatLon.collectAsState()
@@ -246,7 +306,13 @@ fun MapScreen(
     ) { uri -> if (uri != null) viewModel.importVisited(uri) }
 
     val context = LocalContext.current
-    val mapHolder = remember { MapHolder() }
+    val mapHolder = remember {
+        MapHolder().also { holder ->
+            viewModel.customCollection?.accentColorHex?.let { hex ->
+                holder.customAccentColor = hex
+            }
+        }
+    }
 
     // Keep the selected pin sitting just above the detail panel as the user drags it.
     // snapshotFlow re-fires on every pixel of drag; moveCamera (no animation) applies instantly.
@@ -315,6 +381,17 @@ fun MapScreen(
                 mapHolder.pendingCameraTarget = loc
             }
         }
+    }
+
+    LaunchedEffect(mode) {
+        val map = mapHolder.map ?: return@LaunchedEffect
+        val style = map.style ?: return@LaunchedEffect
+        val michelinVis = if (mode == MapMode.MICHELIN) "visible" else "none"
+        val customVis   = if (mode == MapMode.CUSTOM)   "visible" else "none"
+        style.getLayerAs<CircleLayer>(LAYER_ID)?.setProperties(PropertyFactory.visibility(michelinVis))
+        style.getLayerAs<CircleLayer>(VISITED_GLOW_ID)?.setProperties(PropertyFactory.visibility(michelinVis))
+        style.getLayerAs<CircleLayer>(CUSTOM_LAYER_ID)?.setProperties(PropertyFactory.visibility(customVis))
+        style.getLayerAs<CircleLayer>(CUSTOM_VISITED_GLOW_ID)?.setProperties(PropertyFactory.visibility(customVis))
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -387,19 +464,35 @@ fun MapScreen(
                         }
                         libMap.addOnMapClickListener { latLng ->
                             val screenPoint = libMap.projection.toScreenLocation(latLng)
-                            val features = libMap.queryRenderedFeatures(screenPoint, LAYER_ID)
-                            val id = features.firstOrNull()?.getStringProperty(PROP_RESTAURANT_ID)
-                            val hit = restaurants.find { it.id == id }
-                            if (hit != null) {
-                                val zoomTo = maxOf(libMap.cameraPosition.zoom, 14.0)
-                                libMap.animateCamera(
-                                    CameraUpdateFactory.newLatLngZoom(
-                                        LatLng(hit.latitude, hit.longitude), zoomTo
-                                    ), 450, null
-                                )
+                            if (viewModel.mode.value == MapMode.CUSTOM) {
+                                val features = libMap.queryRenderedFeatures(screenPoint, CUSTOM_LAYER_ID)
+                                val id = features.firstOrNull()?.getStringProperty(PROP_CUSTOM_ID)
+                                val hit = viewModel.visibleCustomPlaces.value.find { it.id == id }
+                                if (hit != null) {
+                                    val zoomTo = maxOf(libMap.cameraPosition.zoom, 14.0)
+                                    libMap.animateCamera(
+                                        CameraUpdateFactory.newLatLngZoom(
+                                            LatLng(hit.latitude, hit.longitude), zoomTo
+                                        ), 450, null
+                                    )
+                                }
+                                viewModel.selectCustomPlace(hit)
+                                hit != null
+                            } else {
+                                val features = libMap.queryRenderedFeatures(screenPoint, LAYER_ID)
+                                val id = features.firstOrNull()?.getStringProperty(PROP_RESTAURANT_ID)
+                                val hit = restaurants.find { it.id == id }
+                                if (hit != null) {
+                                    val zoomTo = maxOf(libMap.cameraPosition.zoom, 14.0)
+                                    libMap.animateCamera(
+                                        CameraUpdateFactory.newLatLngZoom(
+                                            LatLng(hit.latitude, hit.longitude), zoomTo
+                                        ), 450, null
+                                    )
+                                }
+                                viewModel.selectRestaurant(hit)
+                                hit != null
                             }
-                            viewModel.selectRestaurant(hit)
-                            hit != null
                         }
                         val pendingFocus = viewModel.pendingFocusLatLon
                         val savedCamera = viewModel.lastCameraPosition
@@ -435,16 +528,18 @@ fun MapScreen(
             },
             update = { _ ->
                 val collection = buildCollection(restaurants, visitedIds)
+                val customCollection = buildCustomCollection(customPlaces, visitedIds)
                 val map = mapHolder.map
                 if (map == null) {
-                    // Map not ready yet — stash so getMapAsync callback can apply it
                     mapHolder.pendingRestaurantCollection = collection
+                    mapHolder.pendingCustomCollection = customCollection
                     return@AndroidView
                 }
 
                 val expectedUrl = if (isDarkTheme) TILE_STYLE_DARK_URL else TILE_STYLE_URL
                 if (mapHolder.appliedStyleUrl != expectedUrl) {
                     mapHolder.pendingRestaurantCollection = collection
+                    mapHolder.pendingCustomCollection = customCollection
                     mapHolder.pendingUserLocation = userLatLon
                     mapHolder.appliedStyleUrl = expectedUrl
                     map.setStyle(Style.Builder().fromUri(expectedUrl)) { style ->
@@ -453,9 +548,14 @@ fun MapScreen(
                     return@AndroidView
                 }
 
-                val source = map.style?.getSourceAs<GeoJsonSource>(SOURCE_ID)
+                val style = map.style
+                val source = style?.getSourceAs<GeoJsonSource>(SOURCE_ID)
                 if (source != null) source.setGeoJson(collection)
                 else mapHolder.pendingRestaurantCollection = collection
+
+                val customSource = style?.getSourceAs<GeoJsonSource>(CUSTOM_SOURCE_ID)
+                if (customSource != null) customSource.setGeoJson(customCollection)
+                else mapHolder.pendingCustomCollection = customCollection
             },
             modifier = Modifier.fillMaxSize(),
         )
@@ -474,10 +574,11 @@ fun MapScreen(
                     .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val anyFilterActive = filters.distinctions != null ||
-                        filters.cuisines != null || filters.priceTiers != null ||
-                        filters.visitedFilter != null
+                val anyFilterActive = mode != MapMode.MICHELIN ||
+                        filters.distinctions != null || filters.cuisines != null ||
+                        filters.priceTiers != null || filters.visitedFilter != null
                 val activeCount = listOfNotNull(
+                    if (mode != MapMode.MICHELIN) mode else null,
                     filters.distinctions?.takeIf { it.isNotEmpty() },
                     filters.priceTiers?.takeIf { it.isNotEmpty() },
                     filters.cuisines?.takeIf { it.isNotEmpty() },
@@ -585,6 +686,21 @@ fun MapScreen(
         }
     }
 
+    if (selectedCustomPlace != null) {
+        ModalBottomSheet(
+            onDismissRequest = { viewModel.selectCustomPlace(null) },
+            sheetState = sheetState,
+        ) {
+            CustomPlaceSheet(
+                place = selectedCustomPlace!!,
+                onDismiss = {
+                    scope.launch { sheetState.hide() }
+                        .invokeOnCompletion { viewModel.selectCustomPlace(null) }
+                },
+            )
+        }
+    }
+
     if (showAbout) {
         AboutDialog(onDismiss = { showAbout = false })
     }
@@ -611,6 +727,9 @@ fun MapScreen(
         FiltersSheet(
             filters = filters,
             availableCuisines = availableCuisines,
+            mode = mode,
+            customCollectionLabel = viewModel.customCollection?.displayName,
+            onModeChange = { viewModel.setMode(it) },
             onFiltersChange = { viewModel.updateFilters(it) },
             onDismiss = { showFiltersSheet = false },
         )
@@ -624,7 +743,9 @@ private class MapHolder {
     var map: MapLibreMap? = null
     var appliedStyleUrl: String? = null
     var pendingRestaurantCollection: FeatureCollection? = null
+    var pendingCustomCollection: FeatureCollection? = null
     var pendingUserLocation: Pair<Double, Double>? = null
     var pendingCameraTarget: Pair<Double, Double>? = null
+    var customAccentColor: String = "#0F766E"
 }
 
