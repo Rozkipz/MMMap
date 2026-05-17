@@ -88,10 +88,12 @@ gh-release version target='':
     fi
 
 # Full release pipeline: clean → check → sign APK → tag → GitHub Release
-release version:
+# versionCode must be a strictly-increasing integer (e.g. 10000 for v1.0.0, 10001 for v1.0.1)
+# e.g. `just release 1.2.3 10203`
+release version code:
     just clean
     just check
-    just assemble-release {{version}}
+    just assemble-release {{version}} {{code}}
     just tag {{version}}
     just gh-release {{version}}
 
