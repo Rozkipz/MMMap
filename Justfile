@@ -14,16 +14,15 @@ default:
 build:
     {{gradle}} assembleDebug
 
-# Install APK on a connected device or emulator (release by default; pass 'debug' for a debug build)
-install variant='release':
+# Install APK on a connected device or emulator
+install variant='debug':
     {{gradle}} install{{capitalize(variant)}}
 
-# Shorthand for `just install debug`
-installdebug: (install "debug")
-
-# Install and launch the app (requires adb + connected device)
-run variant='release': (install variant)
-    adb shell am start -n {{package}}/.MainActivity
+# Install debug build and launch (use `just run release` to install the release build)
+run variant='debug': (install variant)
+    #!/usr/bin/env bash
+    PKG="{{package}}$([ "{{variant}}" = "debug" ] && echo ".debug" || true)"
+    adb -d shell am start -n "$PKG/{{package}}.MainActivity"
 
 # Delete all build outputs
 clean:
