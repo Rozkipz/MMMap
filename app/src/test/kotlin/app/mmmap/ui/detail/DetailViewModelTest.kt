@@ -47,7 +47,7 @@ class DetailViewModelTest {
     @Test fun isVisited_reflectsRepoFlow() = runTest {
         every { visitedRepo.observeIsVisited("r1") } returns flowOf(true)
 
-        vm.loadEnrichment(restaurant("r1"))
+        vm.setCurrentRestaurant(restaurant("r1"))
         advanceUntilIdle()
 
         assertTrue(vm.isVisited.value)

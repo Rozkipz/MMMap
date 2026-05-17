@@ -41,8 +41,6 @@ Description: |
 AntiFeatures:
   NonFreeNet:
     en-US: >
-      Optional Foursquare enrichment (photos, hours, ratings) contacts
-      api.foursquare.com — requires a user-supplied API key.
       Dataset refresh contacts raw.githubusercontent.com (GitHub).
       Map tiles are served by tiles.openfreemap.org.
 

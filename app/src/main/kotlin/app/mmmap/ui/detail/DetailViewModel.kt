@@ -28,7 +28,7 @@ class DetailViewModel @Inject constructor(
         .flatMapLatest { visitedRepo.observeIsVisited(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    fun loadEnrichment(restaurant: Restaurant) {
+    fun setCurrentRestaurant(restaurant: Restaurant) {
         _currentId.value = restaurant.id
     }
 
