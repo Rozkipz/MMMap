@@ -48,8 +48,6 @@ fun FiltersSheet(
     filters: MapFilters,
     availableCuisines: List<String>,
     mode: MapMode = MapMode.MICHELIN,
-    customCollectionLabel: String? = null,
-    onModeChange: (MapMode) -> Unit = {},
     onFiltersChange: (MapFilters) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -59,34 +57,11 @@ fun FiltersSheet(
     val displayCuisines = if (cuisineQuery.isBlank()) availableCuisines
                           else availableCuisines.filter { it.contains(cuisineQuery, ignoreCase = true) }
     val allCuisinesSelected = filters.cuisines == null
-    val anyActive = mode != MapMode.MICHELIN || filters.distinctions != null ||
+    val anyActive = filters.distinctions != null ||
             filters.cuisines != null || filters.priceTiers != null || filters.visitedFilter != null
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
-
-            // ── Mode (only shown when a custom collection is configured) ────
-            if (customCollectionLabel != null) {
-                item {
-                    SectionHeader("Mode")
-                    FlowRow(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        FilterChip(
-                            selected = mode == MapMode.MICHELIN,
-                            onClick = { onModeChange(MapMode.MICHELIN) },
-                            label = { Text("MICHELIN") },
-                        )
-                        FilterChip(
-                            selected = mode == MapMode.CUSTOM,
-                            onClick = { onModeChange(MapMode.CUSTOM) },
-                            label = { Text(customCollectionLabel) },
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                }
-            }
 
             // ── Award ──────────────────────────────────────────────────────
             if (mode == MapMode.MICHELIN) item {
@@ -253,10 +228,7 @@ fun FiltersSheet(
                 item {
                     HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
                     TextButton(
-                        onClick = {
-                            onFiltersChange(MapFilters())
-                            onModeChange(MapMode.MICHELIN)
-                        },
+                        onClick = { onFiltersChange(MapFilters()) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp),

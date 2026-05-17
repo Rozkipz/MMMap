@@ -30,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +58,7 @@ import androidx.compose.ui.Alignment
 import app.mmmap.ui.about.AboutDialog
 import app.mmmap.ui.debug.DebugInfoDialog
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Upload
@@ -574,11 +576,9 @@ fun MapScreen(
                     .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val anyFilterActive = mode != MapMode.MICHELIN ||
-                        filters.distinctions != null || filters.cuisines != null ||
+                val anyFilterActive = filters.distinctions != null || filters.cuisines != null ||
                         filters.priceTiers != null || filters.visitedFilter != null
                 val activeCount = listOfNotNull(
-                    if (mode != MapMode.MICHELIN) mode else null,
                     filters.distinctions?.takeIf { it.isNotEmpty() },
                     filters.priceTiers?.takeIf { it.isNotEmpty() },
                     filters.cuisines?.takeIf { it.isNotEmpty() },
@@ -615,6 +615,24 @@ fun MapScreen(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                     ) {
+                        val customCollection = viewModel.customCollection
+                        if (customCollection != null) {
+                            DropdownMenuItem(
+                                text = { Text("MICHELIN") },
+                                leadingIcon = {
+                                    if (mode == MapMode.MICHELIN) Icon(Icons.Default.Check, contentDescription = null)
+                                },
+                                onClick = { viewModel.setMode(MapMode.MICHELIN); menuExpanded = false },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(customCollection.displayName) },
+                                leadingIcon = {
+                                    if (mode == MapMode.CUSTOM) Icon(Icons.Default.Check, contentDescription = null)
+                                },
+                                onClick = { viewModel.setMode(MapMode.CUSTOM); menuExpanded = false },
+                            )
+                            HorizontalDivider()
+                        }
                         DropdownMenuItem(
                             text = { Text("Map cache") },
                             leadingIcon = { Icon(Icons.Default.Storage, contentDescription = null) },
@@ -728,8 +746,6 @@ fun MapScreen(
             filters = filters,
             availableCuisines = availableCuisines,
             mode = mode,
-            customCollectionLabel = viewModel.customCollection?.displayName,
-            onModeChange = { viewModel.setMode(it) },
             onFiltersChange = { viewModel.updateFilters(it) },
             onDismiss = { showFiltersSheet = false },
         )

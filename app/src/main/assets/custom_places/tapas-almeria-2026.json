@@ -4,7 +4,7 @@
     "name": "Barlovento",
     "latitude": 36.837972,
     "longitude": -2.47270,
-    "address": "C/ General Luque, 19, Almería",
+    "address": "C/ General Luque, 20, Almería",
     "notes": null
   },
   {
@@ -76,7 +76,7 @@
     "name": "Taberna Nuestra Tierra",
     "latitude": 36.84073,
     "longitude": -2.46680,
-    "address": "Calle Jovellanos, 18, Almería",
+    "address": "Calle Jovellanos, 16, Almería",
     "notes": null
   },
   {
@@ -106,8 +106,8 @@
   {
     "id": "tapas-almeria-2026/bar-pena-el-taranto",
     "name": "Bar Peña El Taranto",
-    "latitude": 36.841143,
-    "longitude": -2.464469,
+    "latitude": 36.8415,
+    "longitude": -2.4638,
     "address": "Calle Tenor Iribarne, 20, Almería",
     "notes": null
   },
@@ -225,10 +225,10 @@
   },
   {
     "id": "tapas-almeria-2026/la-bambolina",
-    "name": "La Bambolina",
-    "latitude": 36.839169,
-    "longitude": -2.464381,
-    "address": "Calle Padre Alfonso Torres, Almería",
+    "name": "La Bambalina",
+    "latitude": 36.8391,
+    "longitude": -2.4641,
+    "address": "Calle Padre Alfonso Torres, 14, Almería",
     "notes": null
   },
   {
@@ -236,7 +236,7 @@
     "name": "900 Millas",
     "latitude": 36.8358,
     "longitude": -2.4829,
-    "address": "Calle Lorga, 43, Almería",
+    "address": "Puerto Pesquero, Calle de Coches, 43, Almería",
     "notes": null
   },
   {
@@ -252,7 +252,7 @@
     "name": "Santa Clara",
     "latitude": 36.8255,
     "longitude": -2.4487,
-    "address": "Paseo Marítimo de Almería, 118, Almería",
+    "address": "Paseo Marítimo de Almería, 108, Almería",
     "notes": null
   },
   {
@@ -274,8 +274,8 @@
   {
     "id": "tapas-almeria-2026/freiduria-la-barca",
     "name": "Freiduría La Barca",
-    "latitude": 36.8239,
-    "longitude": -2.4465,
+    "latitude": 36.8290,
+    "longitude": -2.4565,
     "address": "Paseo Marítimo, 51, Almería",
     "notes": null
   },
@@ -284,14 +284,14 @@
     "name": "Terraza Costa",
     "latitude": 36.8278,
     "longitude": -2.4510,
-    "address": "Paseo Marítimo, Almería",
+    "address": "Calle Sorrento, 1, Almería",
     "notes": null
   },
   {
     "id": "tapas-almeria-2026/arido-bar",
     "name": "Árido Bar",
-    "latitude": 36.8239,
-    "longitude": -2.4465,
+    "latitude": 36.8250,
+    "longitude": -2.4474,
     "address": "Paseo Marítimo, 115, Almería",
     "notes": null
   },
@@ -300,7 +300,7 @@
     "name": "Rest. Bar Los Cármenes",
     "latitude": 36.8288,
     "longitude": -2.4486,
-    "address": "Paseo Jaul, 7, Almería",
+    "address": "Calle Jaul, 7, Almería",
     "notes": null
   },
   {
