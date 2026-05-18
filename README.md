@@ -13,6 +13,11 @@
 
 ---
 
+> **This branch (`almeriaruta2026`) adds a special mode for the [Ruta de Tapas Almería 2026](#ruta-de-tapas-almería-2026).**
+> [Download the APK →](https://github.com/Rozkipz/Mmmap/releases/tag/almeriaruta2026)
+
+---
+
 ## Features
 
 - **Offline-first** — dataset synced on first launch and cached locally; works without internet after the initial sync, no sign-in required
@@ -119,6 +124,35 @@ All dependencies are either Apache 2.0, MIT, or LGPL-licensed — fully F-Droid-
 - [x] F-Droid distribution (metadata ready, submission pending)
 - [ ] Country selector to narrow the dataset
 - [ ] Offline tile bundles for full offline use
+
+---
+
+## Ruta de Tapas Almería 2026
+
+<div align="center">
+<img src="docs/ruta.jpeg" alt="Ruta de Tapas Almería 2026 poster" width="420">
+</div>
+
+The **Ruta de Tapas por Almería** is an annual tapas route running across bars and restaurants in the province of Almería, Spain. The 2026 edition runs **11–28 June 2026** and features 43 participating venues.
+
+This branch adds a second map mode that plots all 43 stops on the map alongside the usual MICHELIN data.
+
+### How to use it
+
+1. Download [`Mmmap_almeriaruta2026.apk`](https://github.com/Rozkipz/Mmmap/releases/tag/almeriaruta2026) and install it
+2. Open the app and tap **⋮ → Ruta de Tapas Almería 2026** to switch modes
+3. Tap any pin to see the bar's name, address, description, and a link to its website
+4. Mark stops as visited with the ✓ button — visited pins glow gold
+5. Use the **Visited / Unvisited** filter chips to track what's left
+6. Switch back to **MICHELIN** mode at any time from the same menu
+
+### The stops
+
+| Area | Venues |
+|------|--------|
+| Almería capital | Barlovento, Taberna Nuevo Torreluz, Café Indalín, Bar Habibi, Bodega Las Botas, Bar Quinto Toro, Cervecería Baviera, Rest. Capitol Centro, San Francisco 26, Taberna Nuestra Tierra, Kiosco 18 Julio, Cervecería El Ancla, Scondite, Bar Peña El Taranto, Bar 10-58, Vintage 54, Rotterdam Tap Room, Tortillería La Mala, Bar La Vecina, Taberna Rest. La Encina, Bodega Montenegro, La Bellota & El Buey, Bar Bahía de Palma, Aguamarina, Taberna El Andaluz, Fausto Vram, Bar Las Tiendas, La Esquinita del Capitol, La Bambalina |
+| Más cerca del Mar | 900 Millas, La Marítima, Santa Clara, El Capo Mangia, Taberna Todo Locura, Freiduría La Barca, Terraza Costa, Árido Bar, Rest. Bar Los Cármenes |
+| Provincia | Taller de Sabores (Huércal de Almería), Los Barquicos (Carboneras), El Vuelo del Ganso (El Ejido), La Cosecha (El Ejido), Neptuno Mojácar (Mojácar) |
 
 ---
 
