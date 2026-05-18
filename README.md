@@ -14,7 +14,7 @@
 ---
 
 > **This branch (`almeriaruta2026`) adds a special mode for the [Ruta de Tapas Almería 2026](#ruta-de-tapas-almería-2026).**
-> [Download the APK →](https://github.com/Rozkipz/Mmmap/releases/tag/ruta-almeria-2026)
+> [Download the APK →](https://github.com/Rozkipz/Mmmap/releases/tag/ruta2026)
 
 ---
 
