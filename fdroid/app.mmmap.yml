@@ -47,7 +47,7 @@ Builds:
 
 AllowedAPKSigningKeys: 9359eb2699bd2f2a234a2a5379cb8c22a8ebe44ddb34b93192c73b7aeafde347
 
-AutoUpdateMode: Version v%v
-UpdateCheckMode: Tags
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v\d+\.\d+$
 CurrentVersion: '1.2'
 CurrentVersionCode: 10200
