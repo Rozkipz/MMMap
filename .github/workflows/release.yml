@@ -46,6 +46,15 @@ jobs:
           MINOR="${BASH_REMATCH[2]}"
           echo "code=$(( MAJOR * 10000 + MINOR * 100 ))" >> $GITHUB_OUTPUT
 
+      - name: Verify gradle.properties matches version
+        run: |
+          GRADLE_NAME=$(grep "^versionName=" gradle.properties | cut -d= -f2)
+          GRADLE_CODE=$(grep "^versionCode=" gradle.properties | cut -d= -f2)
+          if [[ "$GRADLE_NAME" != "${{ inputs.version }}" || "$GRADLE_CODE" != "${{ steps.ver.outputs.code }}" ]]; then
+            echo "::error::gradle.properties (${GRADLE_NAME}/${GRADLE_CODE}) does not match input (${{ inputs.version }}/${{ steps.ver.outputs.code }}). Run 'just bump-version ${{ inputs.version }}' and commit before triggering this workflow."
+            exit 1
+          fi
+
       - name: Write keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}

@@ -108,11 +108,35 @@ gh-release version target='':
       gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes "$CHANGELOG" "$APK#Mmmap_v{{version}}.apk"
     fi
 
-# Full release pipeline: clean → check → sign APK → tag → GitHub Release
+# Bump gradle.properties to match the given MAJOR.MINOR version (no commit)
+# F-Droid builds without -P flags, so the source-of-truth versionName/versionCode
+# must live in gradle.properties — git tags pin commits, not gradle args.
+bump-version version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! [[ "{{version}}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+        echo "error: version must be MAJOR.MINOR (got '{{version}}')" >&2
+        exit 1
+    fi
+    CODE=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 ))
+    sed -i.bak "s/^versionName=.*/versionName={{version}}/" gradle.properties
+    sed -i.bak "s/^versionCode=.*/versionCode=$CODE/" gradle.properties
+    rm -f gradle.properties.bak
+    echo "bumped: versionName={{version}} versionCode=$CODE"
+
+# Full release pipeline: bump → clean → check → sign APK → commit bump → tag → GitHub Release
 release version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just bump-version {{version}}
     just clean
     just check
     just assemble-release {{version}}
+    git add gradle.properties
+    if ! git diff --cached --quiet; then
+        git commit -m "chore(release): v{{version}}"
+        git push origin HEAD
+    fi
     just tag {{version}}
     just gh-release {{version}}
 

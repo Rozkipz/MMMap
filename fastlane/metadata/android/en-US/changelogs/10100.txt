@@ -1,0 +1,1 @@
+Build pipeline fixes for F-Droid: versionName/versionCode now live in gradle.properties so source builds produce identical APKs.

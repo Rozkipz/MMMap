@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.1]
+
+- Move `versionName` / `versionCode` into `gradle.properties` so source-only
+  builds (F-Droid) produce identically-versioned APKs without `-P` flags
+- Release pipeline auto-bumps `gradle.properties`; GH Actions workflow
+  fails fast if it drifts from the input version
+- Fix F-Droid metadata output path: `app-release-unsigned.apk`
+
 ## [1.0]
 
 Initial release.
