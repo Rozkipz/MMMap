@@ -57,8 +57,8 @@ check: lint test
 # ─── Release ──────────────────────────────────────────────────────────────────
 
 # Build a signed release APK; optionally override version name and code
-# e.g. `just assemble-release 1.2.3 10203`  or plain `just assemble-release`
-# When version is given without code, derives code = MAJOR*10000 + MINOR*100 + PATCH.
+# e.g. `just assemble-release 1.2 10200`  or plain `just assemble-release`
+# When version is given without code, derives code = MAJOR*10000 + MINOR*100.
 assemble-release version='' code='':
     #!/usr/bin/env bash
     set -euo pipefail
@@ -66,13 +66,13 @@ assemble-release version='' code='':
     CODE="{{code}}"
     ARGS=()
     if [[ -n "$VERSION" ]]; then
-        if ! [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            echo "error: version must be MAJOR.MINOR.PATCH (got '$VERSION')" >&2
+        if ! [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "error: version must be MAJOR.MINOR (got '$VERSION')" >&2
             exit 1
         fi
         ARGS+=("-PversionName=$VERSION")
         if [[ -z "$CODE" ]]; then
-            CODE=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 + BASH_REMATCH[3] ))
+            CODE=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 ))
         fi
     fi
     if [[ -n "$CODE" ]]; then
@@ -80,12 +80,12 @@ assemble-release version='' code='':
     fi
     {{gradle}} assembleRelease "${ARGS[@]}"
 
-# Create a signed git tag and push it  →  e.g. `just tag 1.2.0`
+# Create a signed git tag and push it  →  e.g. `just tag 1.2`
 tag version:
     #!/usr/bin/env bash
     set -euo pipefail
-    if ! [[ "{{version}}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo "error: version must be MAJOR.MINOR.PATCH (got '{{version}}')" >&2
+    if ! [[ "{{version}}" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        echo "error: version must be MAJOR.MINOR (got '{{version}}')" >&2
         exit 1
     fi
     git tag -s v{{version}} -m "Release v{{version}}"

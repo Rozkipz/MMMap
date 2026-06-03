@@ -129,7 +129,7 @@ the developer-signed APK.
 
 ### Build verification
 Tested with: JDK 17, AGP 9.2.1, Android SDK platform-36.
-./gradlew assembleRelease -PversionName=1.0.0 -PversionCode=10000
+./gradlew assembleRelease -PversionName=1.0 -PversionCode=10000
 ```
 
 ---

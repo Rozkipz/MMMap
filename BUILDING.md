@@ -35,9 +35,9 @@ When `keystore.properties` is absent (e.g. on a build server), the release APK i
 
 ## versionCode convention
 
-`versionCode = MAJOR * 10000 + MINOR * 100 + PATCH`
+`versionCode = MAJOR * 10000 + MINOR * 100`
 
-For example, `1.0.0` → `10000`, `1.2.3` → `10203`.
+For example, `1.0` → `10000`, `1.2` → `10200`, `2.3` → `20300`.
 
 ## Bundled restaurant data
 
@@ -62,7 +62,7 @@ The release APK is reproducible when `versionName` and `versionCode` are pinned:
 
 ```sh
 ./gradlew clean assembleRelease \
-    -PversionName=1.0.0 \
+    -PversionName=1.0 \
     -PversionCode=10000
 ```
 
@@ -71,7 +71,7 @@ Build twice on a clean checkout and compare:
 ```sh
 # unpack both APKs and diff content (ignoring META-INF/ signatures)
 unzip -d /tmp/build1 app/build/outputs/apk/release/app-release.apk
-./gradlew clean assembleRelease -PversionName=1.0.0 -PversionCode=10000
+./gradlew clean assembleRelease -PversionName=1.0 -PversionCode=10000
 unzip -d /tmp/build2 app/build/outputs/apk/release/app-release.apk
 diff -rq --exclude='*.RSA' --exclude='*.SF' --exclude='*.MF' /tmp/build1 /tmp/build2
 ```
@@ -85,9 +85,9 @@ F-Droid's build server invocation (declared in `metadata/app.mmmap.yml` in the
 
 ```yaml
 Builds:
-  - versionName: 1.0.0
+  - versionName: 1.0
     versionCode: 10000
-    commit: v1.0.0
+    commit: v1.0
     gradle:
       - yes
     output: app/build/outputs/apk/release/app-release.apk
