@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number (e.g. 1.2.3)'
+        description: 'Version number (e.g. 1.2)'
         required: true
         type: string
 
@@ -34,14 +34,17 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
 
-      - name: Compute version code
+      - name: Validate version and compute version code
         id: ver
         run: |
           VERSION="${{ inputs.version }}"
-          MAJOR=$(echo "$VERSION" | cut -d. -f1)
-          MINOR=$(echo "$VERSION" | cut -d. -f2)
-          PATCH=$(echo "$VERSION" | cut -d. -f3)
-          echo "code=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))" >> $GITHUB_OUTPUT
+          if ! [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::version must be MAJOR.MINOR (got '$VERSION')"
+            exit 1
+          fi
+          MAJOR="${BASH_REMATCH[1]}"
+          MINOR="${BASH_REMATCH[2]}"
+          echo "code=$(( MAJOR * 10000 + MINOR * 100 ))" >> $GITHUB_OUTPUT
 
       - name: Write keystore
         env:
