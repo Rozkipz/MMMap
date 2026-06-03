@@ -34,18 +34,19 @@ AntiFeatures:
 
 RepoType: git
 Repo: https://github.com/Rozkipz/Mmmap
+Binaries: https://github.com/Rozkipz/Mmmap/releases/download/v%v/app-release.apk
 
 Builds:
-  - versionName: '1.1'
-    versionCode: 10100
-    commit: v1.1
+  - versionName: '1.2'
+    versionCode: 10200
+    commit: e3e99a62025158ce0a24d5eaf2decd6f32931788
+    subdir: app
     gradle:
       - yes
-    output: app/build/outputs/apk/release/app-release-unsigned.apk
 
 AllowedAPKSigningKeys: 9359eb2699bd2f2a234a2a5379cb8c22a8ebe44ddb34b93192c73b7aeafde347
 
 AutoUpdateMode: Version v%v
 UpdateCheckMode: Tags
-CurrentVersion: '1.1'
-CurrentVersionCode: 10100
+CurrentVersion: '1.2'
+CurrentVersionCode: 10200
