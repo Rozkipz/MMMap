@@ -160,7 +160,7 @@ echo "What changed in this release." \
 #      commit: vX.Y.Z
 #      gradle:
 #        - yes
-#      output: app/build/outputs/apk/release/app-release.apk
+#      output: app/build/outputs/apk/release/app-release-unsigned.apk
 
 # 5. Run the standard release pipeline
 just release X.Y.Z

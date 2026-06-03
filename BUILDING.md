@@ -90,8 +90,13 @@ Builds:
     commit: v1.0
     gradle:
       - yes
-    output: app/build/outputs/apk/release/app-release.apk
+    output: app/build/outputs/apk/release/app-release-unsigned.apk
 ```
+
+The `-unsigned` suffix is because fdroidserver strips the keystore
+config from `build.gradle.kts` before building, so the gradle build
+emits an unsigned APK. F-Droid then byte-matches it against your
+developer-signed APK from the GitHub Release.
 
 Gradle passes `-PversionName` and `-PversionCode` automatically from the metadata.
 No `local.properties` or `keystore.properties` are present; the build produces an unsigned APK.
