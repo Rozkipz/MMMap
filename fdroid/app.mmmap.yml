@@ -23,20 +23,8 @@ SourceCode: https://github.com/Rozkipz/Mmmap
 IssueTracker: https://github.com/Rozkipz/Mmmap/issues
 Changelog: https://github.com/Rozkipz/Mmmap/blob/HEAD/CHANGELOG.md
 
-AutoName: Mmmap
-Summary: Offline MICHELIN Guide restaurant map
-Description: |
-  Mmmap puts every restaurant in the MICHELIN Guide on a single map —
-  from three-star temples of gastronomy to Bib Gourmand hidden gems.
-
-  Restaurant data is bundled with the app so the map works fully offline
-  from first launch. The dataset is refreshed in the background when an
-  update is available on GitHub.
-
-  Features: filter by distinction, cuisine, and price; tap any pin for
-  details; Near Me sorted by distance; mark restaurants as visited.
-
-  Privacy: no tracking, no analytics, no account required.
+# Name / Summary / Description are sourced from the Fastlane structure
+# in the upstream repo: fastlane/metadata/android/en-US/{title,short_description,full_description}.txt
 
 AntiFeatures:
   NonFreeNet:
