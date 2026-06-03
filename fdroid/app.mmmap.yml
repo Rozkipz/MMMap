@@ -19,9 +19,9 @@ Categories:
   - Navigation
 License: MIT
 AuthorName: Rowan
-SourceCode: https://github.com/Rozkipz/MMMap
-IssueTracker: https://github.com/Rozkipz/MMMap/issues
-Changelog: https://github.com/Rozkipz/MMMap/blob/HEAD/CHANGELOG.md
+SourceCode: https://github.com/Rozkipz/Mmmap
+IssueTracker: https://github.com/Rozkipz/Mmmap/issues
+Changelog: https://github.com/Rozkipz/Mmmap/blob/HEAD/CHANGELOG.md
 
 AutoName: Mmmap
 Summary: Offline MICHELIN Guide restaurant map
@@ -45,7 +45,7 @@ AntiFeatures:
       Map tiles are served by tiles.openfreemap.org.
 
 RepoType: git
-Repo: https://github.com/Rozkipz/MMMap
+Repo: https://github.com/Rozkipz/Mmmap
 
 Builds:
   - versionName: '1.0'

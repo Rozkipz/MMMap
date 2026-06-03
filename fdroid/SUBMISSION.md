@@ -77,7 +77,7 @@ sudo apt install fdroidserver
 ### 5. Copy and validate the metadata
 
 ```sh
-cp /path/to/MMMap/fdroid/app.mmmap.yml metadata/app.mmmap.yml
+cp /path/to/Mmmap/fdroid/app.mmmap.yml metadata/app.mmmap.yml
 
 # auto-format to fdroiddata style (fixes whitespace, field order, etc.)
 fdroid rewritemeta app.mmmap
@@ -114,7 +114,7 @@ Suggested MR description:
 
 **App ID**: app.mmmap
 **License**: MIT
-**Source**: https://github.com/Rozkipz/MMMap
+**Source**: https://github.com/Rozkipz/Mmmap
 
 Plots every MICHELIN Guide restaurant on an offline-first MapLibre map.
 No GMS, no Firebase, no Mapbox. Fully self-hostable data via GitHub CSV sync.
