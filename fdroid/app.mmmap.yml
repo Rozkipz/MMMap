@@ -41,6 +41,7 @@ Builds:
     versionCode: 10200
     commit: e3e99a62025158ce0a24d5eaf2decd6f32931788
     subdir: app
+    ndk: r28c
     gradle:
       - yes
 
