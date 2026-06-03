@@ -87,15 +87,21 @@ fdroid lint app.mmmap
 # expected: no errors
 ```
 
-### 6. (Optional) Test the build locally with Docker
+### 6. (Optional) Test the build locally
 
-Requires Docker and fdroidserver with the build VM image:
+Run from inside the fdroiddata clone — uses your host JDK 17 + Android SDK:
 
 ```sh
-fdroid build --on-server --no-tarball --verbose app.mmmap
+fdroid build --no-tarball --verbose app.mmmap
 ```
 
-This simulates exactly what F-Droid's build server will do. Fix any build failures before submitting.
+This clones Mmmap at the `v1.0` tag into `build/app.mmmap/`, runs
+`./gradlew assembleRelease -PversionName=1.0 -PversionCode=10000`,
+and validates the output APK. Fix any build failures before submitting.
+
+> Note: `--on-server` is for use inside F-Droid's build farm only
+> (it tries to lock the host root account). Don't pass it for local
+> verification on macOS or Linux desktops.
 
 ### 7. Open the Merge Request
 
