@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 fun gitVersionName(): String {
     fun exec(vararg cmd: String) = providers.exec {
@@ -105,7 +106,14 @@ android {
 }
 
 kotlin {
-    jvmToolchain(17)
+    // Set the Kotlin compile target to 17 *without* requesting a toolchain.
+    // jvmToolchain(17) would force Gradle to locate/provision a JDK 17, which
+    // fails on F-Droid's build server (auto-provisioning disabled). Using
+    // compilerOptions lets Kotlin compile to 17 bytecode with whatever JDK
+    // is running Gradle — JDK 17 is required by compileOptions above anyway.
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
 }
 
 dependencies {

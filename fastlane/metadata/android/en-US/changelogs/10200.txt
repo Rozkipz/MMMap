@@ -1,0 +1,1 @@
+Build fix: drop Kotlin JVM toolchain spec so F-Droid's build server can compile without auto-provisioning a JDK.

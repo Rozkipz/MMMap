@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.2]
+
+- Drop `kotlin { jvmToolchain(17) }` in favour of `compilerOptions { jvmTarget = JVM_17 }`
+  so F-Droid's build server (which disables Gradle toolchain auto-provisioning) can
+  build successfully
+
 ## [1.1]
 
 - Move `versionName` / `versionCode` into `gradle.properties` so source-only
