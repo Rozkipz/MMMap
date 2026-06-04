@@ -36,13 +36,10 @@ jobs:
           yes 2>/dev/null | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;28.2.13676358" >/dev/null
           ls "$ANDROID_HOME/ndk/"
 
-      - name: Set up fdroiddata-style workspace
+      - name: Clone fdroiddata (partial — same env F-Droid CI uses)
         run: |
-          mkdir -p fdroidcheck/metadata
-          cp fdroid/app.mmmap.yml fdroidcheck/metadata/
-          # Map BOTH the release-name (r28c) and revision (28.2.13676358) to the
-          # installed NDK so `ndk: r28c` in the Builds entry resolves. Mirrors
-          # what F-Droid's buildserver does in _install_ndk().
+          git clone --filter=blob:none --depth=1 https://gitlab.com/fdroid/fdroiddata.git fdroidcheck
+          # Override the upstream config.yml with one matching the GH runner's paths.
           cat > fdroidcheck/config.yml <<EOF
           sdk_path: ${ANDROID_HOME}
           ndk_paths:
@@ -55,7 +52,8 @@ jobs:
           keypass: x
           EOF
           chmod 600 fdroidcheck/config.yml
-          cat fdroidcheck/config.yml
+          # Replace the upstream metadata with ours (which references the v1.3 commit).
+          cp fdroid/app.mmmap.yml fdroidcheck/metadata/app.mmmap.yml
 
       - name: Wait for GitHub Release asset
         run: |
