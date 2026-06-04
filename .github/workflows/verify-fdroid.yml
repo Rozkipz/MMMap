@@ -45,6 +45,15 @@ jobs:
           chown -R "$(whoami)" fdroiddata
           chmod 600 fdroiddata/config.yml || true
 
+      - name: Install fdroidserver master (mirrors F-Droid CI install_fdroid_server)
+        run: |
+          mkdir -p /fdroidserver
+          curl -sSfL https://gitlab.com/fdroid/fdroidserver/-/archive/master/fdroidserver-master.tar.gz \
+            | tar -xz --directory=/fdroidserver --strip-components=1
+          echo "/fdroidserver" >> "$GITHUB_PATH"
+          echo "PYTHONPATH=/fdroidserver:/fdroidserver/examples" >> "$GITHUB_ENV"
+          echo "PYTHONUNBUFFERED=true" >> "$GITHUB_ENV"
+
       # ── Mirrors fdroiddata `.gitlab-ci.yml` test-stage jobs ──────────────
 
       - name: schema validation
