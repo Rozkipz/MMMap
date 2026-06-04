@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.4]
+
+- Disable AGP's "Dependency metadata" signing block (`dependenciesInfo.includeInApk = false`)
+  so F-Droid's APK scanner accepts the release build
+
 ## [1.3]
 
 - Move `versionName` / `versionCode` from `gradle.properties` into literal

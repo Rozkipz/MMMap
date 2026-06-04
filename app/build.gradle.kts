@@ -30,8 +30,8 @@ android {
         // Hardcoded so fdroidserver's regex parser can extract the version at each
         // tagged commit (its checkupdates step doesn't read gradle.properties or
         // evaluate findProperty). Bumped by `just bump-version <X.Y>`.
-        versionCode = 10300
-        versionName = "1.3"
+        versionCode = 10400
+        versionName = "1.4"
         // -PversionCode / -PversionName still override (ad-hoc local builds);
         // the release workflow passes these but they match the hardcoded values.
         (findProperty("versionCode") as? String)?.toInt()?.let { versionCode = it }
@@ -97,6 +97,14 @@ android {
         jniLibs {
             useLegacyPackaging = false
         }
+    }
+
+    // AGP 8+ embeds a "Dependency metadata" signing block in release APKs
+    // (intended for Play Console SBOM tracking). F-Droid's scanner rejects
+    // unknown signing blocks, so disable both forms.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 }
 

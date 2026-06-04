@@ -1,0 +1,1 @@
+Strip AGP's dependency-metadata signing block so F-Droid's APK scanner accepts the build.
