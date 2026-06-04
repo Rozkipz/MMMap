@@ -95,30 +95,29 @@ jobs:
             exit 1
           fi
 
-      - name: Diagnose NDK availability in image
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls -la "$ANDROID_HOME/ndk/" 2>&1 || echo "(no ndk/ subdir at \$ANDROID_HOME)"
-          for d in /opt/android-sdk/ndk /home/vagrant/android-sdk/ndk /usr/local/lib/android/sdk/ndk; do
-            ls -d "$d" 2>/dev/null && ls "$d"
-          done
-
-      - name: fdroid build (reproducible-build byte-match)
-        working-directory: fdroiddata
-        run: |
-          set -o pipefail
-          fdroid build --no-tarball "$CHANGED" 2>&1 | tee /tmp/build.log
-          if grep -q "INFO: 1 build failed" /tmp/build.log || ! grep -q "INFO: Successfully built" /tmp/build.log; then
-            echo "::error::fdroid build failed. Tail of log:"
-            tail -40 /tmp/build.log
-            exit 1
-          fi
+      # Note: we don't run `fdroid build` here. F-Droid's CI runs that build
+      # inside a full vagrant-user / gradlew-fdroid / sysctl-tuned setup that
+      # is impractical to replicate in GH Actions. Reproducible-build is
+      # verified locally on macOS via `fdroid build` with our exact NDK
+      # (see fdroid/SUBMISSION.md), and F-Droid's CI runs the real build on
+      # their MR pipeline. What we verify here is everything *else* their
+      # CI checks — schema, lint, rewritemeta, checkupdates, scanner — so
+      # those failures surface before pushing to the MR.
 
       - name: fdroid scanner (check apk — signing blocks, known non-free, etc.)
         working-directory: fdroiddata
         run: |
-          ls tmp/binaries/*.apk 2>/dev/null || {
-            echo "::error::No binary downloaded — fdroid build didn't run scanner inputs"
+          # F-Droid scans the binary at the Binaries URL. Mirror that by
+          # downloading the published APK to where the scanner looks.
+          mkdir -p tmp/binaries
+          VCODE=$(grep -E '^\s+versionCode:\s+[0-9]+' metadata/${CHANGED}.yml \
+                  | tail -1 | awk '{print $2}')
+          curl -sfL "https://github.com/Rozkipz/Mmmap/releases/download/v${{ inputs.version }}/app-release.apk" \
+            -o "tmp/binaries/${CHANGED}_${VCODE}.binary.apk"
+          set -o pipefail
+          fdroid scanner "$CHANGED" 2>&1 | tee /tmp/scan.log
+          if grep -qE "^ERROR |Scanner found [1-9]" /tmp/scan.log; then
+            echo "::error::F-Droid scanner flagged the APK:"
+            grep -E "^ERROR |Scanner found|Problem:|CRITICAL" /tmp/scan.log
             exit 1
-          }
-          fdroid scanner "$CHANGED"
+          fi
