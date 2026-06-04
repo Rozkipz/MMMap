@@ -44,6 +44,13 @@ jobs:
           cp mmmap/fdroid/app.mmmap.yml fdroiddata/metadata/app.mmmap.yml
           chown -R "$(whoami)" fdroiddata
           chmod 600 fdroiddata/config.yml || true
+          # Commit the overlay so `fdroid checkupdates --auto` (which requires a
+          # clean working tree) treats this as the as-submitted state.
+          cd fdroiddata
+          git config user.email "verify@ci.local"
+          git config user.name "verify-ci"
+          git add metadata/app.mmmap.yml
+          git commit -m "overlay app.mmmap from upstream Mmmap repo" --quiet
 
       - name: Install fdroidserver master (mirrors F-Droid CI install_fdroid_server)
         run: |
