@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.3]
+
+- Move `versionName` / `versionCode` from `gradle.properties` into literal
+  values in `app/build.gradle.kts` so F-Droid's `checkupdates` regex parser
+  can extract the current version at each tagged commit
+
 ## [1.2]
 
 - Drop `kotlin { jvmToolchain(17) }` in favour of `compilerOptions { jvmTarget = JVM_17 }`

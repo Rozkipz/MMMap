@@ -1,18 +1,6 @@
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-fun gitVersionName(): String {
-    fun exec(vararg cmd: String) = providers.exec {
-        commandLine(*cmd)
-        isIgnoreExitValue = true
-    }.standardOutput.asText.get().trim()
-    return try {
-        val tag = exec("git", "describe", "--tags", "--abbrev=0").ifBlank { return "dev" }
-        val sha = exec("git", "rev-parse", "--short", "HEAD").ifBlank { return "dev" }
-        "$tag-$sha"
-    } catch (_: Exception) { "dev" }
-}
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -39,8 +27,15 @@ android {
         applicationId = "app.mmmap"
         minSdk = 26
         targetSdk = 35
-        versionCode = (findProperty("versionCode") as? String)?.toInt() ?: 1
-        versionName = (findProperty("versionName") as? String) ?: gitVersionName()
+        // Hardcoded so fdroidserver's regex parser can extract the version at each
+        // tagged commit (its checkupdates step doesn't read gradle.properties or
+        // evaluate findProperty). Bumped by `just bump-version <X.Y>`.
+        versionCode = 10300
+        versionName = "1.3"
+        // -PversionCode / -PversionName still override (ad-hoc local builds);
+        // the release workflow passes these but they match the hardcoded values.
+        (findProperty("versionCode") as? String)?.toInt()?.let { versionCode = it }
+        (findProperty("versionName") as? String)?.let { versionName = it }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

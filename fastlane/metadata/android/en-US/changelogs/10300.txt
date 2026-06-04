@@ -1,0 +1,1 @@
+Build pipeline: version literals moved into build.gradle.kts so F-Droid's checkupdates can detect new releases automatically.

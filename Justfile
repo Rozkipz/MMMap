@@ -108,9 +108,10 @@ gh-release version target='':
       gh release create "v{{version}}" $TARGET_FLAG --title "v{{version}}" --notes "$CHANGELOG" "$APK#Mmmap_v{{version}}.apk"
     fi
 
-# Bump gradle.properties to match the given MAJOR.MINOR version (no commit)
-# F-Droid builds without -P flags, so the source-of-truth versionName/versionCode
-# must live in gradle.properties — git tags pin commits, not gradle args.
+# Bump build.gradle.kts to match the given MAJOR.MINOR version (no commit)
+# F-Droid's checkupdates regex parses the literal versionCode/versionName lines
+# in defaultConfig — gradle.properties is invisible to it. Keep both literals
+# in build.gradle.kts in sync with git tags.
 bump-version version:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -119,9 +120,9 @@ bump-version version:
         exit 1
     fi
     CODE=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 ))
-    sed -i.bak "s/^versionName=.*/versionName={{version}}/" gradle.properties
-    sed -i.bak "s/^versionCode=.*/versionCode=$CODE/" gradle.properties
-    rm -f gradle.properties.bak
+    sed -i.bak -E "s/^([[:space:]]*)versionCode = [0-9]+$/\1versionCode = $CODE/" app/build.gradle.kts
+    sed -i.bak -E "s/^([[:space:]]*)versionName = \"[0-9.]+\"$/\1versionName = \"{{version}}\"/" app/build.gradle.kts
+    rm -f app/build.gradle.kts.bak
     echo "bumped: versionName={{version}} versionCode=$CODE"
 
 # Full release pipeline: bump → clean → check → sign APK → commit bump → tag → GitHub Release

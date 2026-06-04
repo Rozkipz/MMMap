@@ -46,12 +46,12 @@ jobs:
           MINOR="${BASH_REMATCH[2]}"
           echo "code=$(( MAJOR * 10000 + MINOR * 100 ))" >> $GITHUB_OUTPUT
 
-      - name: Verify gradle.properties matches version
+      - name: Verify build.gradle.kts matches version
         run: |
-          GRADLE_NAME=$(grep "^versionName=" gradle.properties | cut -d= -f2)
-          GRADLE_CODE=$(grep "^versionCode=" gradle.properties | cut -d= -f2)
-          if [[ "$GRADLE_NAME" != "${{ inputs.version }}" || "$GRADLE_CODE" != "${{ steps.ver.outputs.code }}" ]]; then
-            echo "::error::gradle.properties (${GRADLE_NAME}/${GRADLE_CODE}) does not match input (${{ inputs.version }}/${{ steps.ver.outputs.code }}). Run 'just bump-version ${{ inputs.version }}' and commit before triggering this workflow."
+          KTS_NAME=$(grep -E '^\s+versionName = "[0-9.]+"$' app/build.gradle.kts | sed -E 's/.*"([0-9.]+)".*/\1/')
+          KTS_CODE=$(grep -E '^\s+versionCode = [0-9]+$' app/build.gradle.kts | sed -E 's/.* ([0-9]+)$/\1/')
+          if [[ "$KTS_NAME" != "${{ inputs.version }}" || "$KTS_CODE" != "${{ steps.ver.outputs.code }}" ]]; then
+            echo "::error::app/build.gradle.kts (${KTS_NAME}/${KTS_CODE}) does not match input (${{ inputs.version }}/${{ steps.ver.outputs.code }}). Run 'just bump-version ${{ inputs.version }}' and commit before triggering this workflow."
             exit 1
           fi
 
