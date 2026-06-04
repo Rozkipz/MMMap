@@ -50,9 +50,11 @@ jobs:
       - name: schema validation
         working-directory: fdroiddata
         run: |
-          # buildserver-trixie doesn't have pip; install check-jsonschema via apt.
+          # buildserver-trixie lacks pip and python3-check-jsonschema; install pip
+          # and pull check-jsonschema from PyPI (matches F-Droid CI's `python` image).
           apt-get update -qq
-          apt-get install -y --no-install-recommends python3-check-jsonschema
+          apt-get install -y --no-install-recommends python3-pip
+          python3 -m pip install --quiet --break-system-packages check-jsonschema
           check-jsonschema --schemafile schemas/metadata.json metadata/${CHANGED}.yml
 
       - name: fdroid lint
