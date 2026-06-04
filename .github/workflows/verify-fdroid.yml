@@ -95,9 +95,24 @@ jobs:
             exit 1
           fi
 
+      - name: Diagnose NDK availability in image
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls -la "$ANDROID_HOME/ndk/" 2>&1 || echo "(no ndk/ subdir at \$ANDROID_HOME)"
+          for d in /opt/android-sdk/ndk /home/vagrant/android-sdk/ndk /usr/local/lib/android/sdk/ndk; do
+            ls -d "$d" 2>/dev/null && ls "$d"
+          done
+
       - name: fdroid build (reproducible-build byte-match)
         working-directory: fdroiddata
-        run: fdroid build --no-tarball "$CHANGED"
+        run: |
+          set -o pipefail
+          fdroid build --no-tarball "$CHANGED" 2>&1 | tee /tmp/build.log
+          if grep -q "INFO: 1 build failed" /tmp/build.log || ! grep -q "INFO: Successfully built" /tmp/build.log; then
+            echo "::error::fdroid build failed. Tail of log:"
+            tail -40 /tmp/build.log
+            exit 1
+          fi
 
       - name: fdroid scanner (check apk — signing blocks, known non-free, etc.)
         working-directory: fdroiddata
