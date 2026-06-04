@@ -37,9 +37,9 @@ Repo: https://github.com/Rozkipz/Mmmap
 Binaries: https://github.com/Rozkipz/Mmmap/releases/download/v%v/app-release.apk
 
 Builds:
-  - versionName: '1.2'
-    versionCode: 10200
-    commit: e3e99a62025158ce0a24d5eaf2decd6f32931788
+  - versionName: '1.3'
+    versionCode: 10300
+    commit: d9a5897e54d468634f2cee41815b05a97ff23d98
     subdir: app
     ndk: r28c
     gradle:
@@ -49,5 +49,5 @@ AllowedAPKSigningKeys: 9359eb2699bd2f2a234a2a5379cb8c22a8ebe44ddb34b93192c73b7ae
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v\d+\.\d+$
-CurrentVersion: '1.2'
-CurrentVersionCode: 10200
+CurrentVersion: '1.3'
+CurrentVersionCode: 10300
