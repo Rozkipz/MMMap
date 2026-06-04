@@ -36,6 +36,14 @@ jobs:
           yes 2>/dev/null | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;28.2.13676358" >/dev/null
           ls "$ANDROID_HOME/ndk/"
 
+      - name: Install gradlew-fdroid wrapper (F-Droid's gradle launcher)
+        run: |
+          git clone --depth=1 https://gitlab.com/fdroid/gradlew-fdroid.git /tmp/gradlew-fdroid
+          sudo install -m 0755 /tmp/gradlew-fdroid/gradlew.py /usr/local/bin/gradlew-fdroid
+          # F-Droid's buildserver provisions it as both names so fdroidserver finds it.
+          sudo ln -sf /usr/local/bin/gradlew-fdroid /usr/local/bin/gradle
+          gradlew-fdroid --help 2>&1 | head -3 || true
+
       - name: Clone fdroiddata (partial — same env F-Droid CI uses)
         run: |
           git clone --filter=blob:none --depth=1 https://gitlab.com/fdroid/fdroiddata.git fdroidcheck
