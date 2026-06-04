@@ -50,8 +50,10 @@ jobs:
       - name: schema validation
         working-directory: fdroiddata
         run: |
-          pip install --quiet check-jsonschema
-          check-jsonschema --schemafile schemas/metadata.json metadata/${CHANGED}.yml
+          # buildserver-trixie doesn't ship check-jsonschema and pip isn't on
+          # PATH; install via python3 -m pip and run via python3 -m.
+          python3 -m pip install --quiet --break-system-packages check-jsonschema
+          python3 -m check_jsonschema --schemafile schemas/metadata.json metadata/${CHANGED}.yml
 
       - name: fdroid lint
         working-directory: fdroiddata
