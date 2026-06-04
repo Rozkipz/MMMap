@@ -1,20 +1,7 @@
-# F-Droid metadata for Mmmap
-#
-# This file lives in the fdroiddata repository (https://gitlab.com/fdroid/fdroiddata),
-# NOT in the Mmmap source tree.  Copy it there once you have forked fdroiddata.
-#
-# Before submitting the MR:
-#   1. Fill in AllowedAPKSigningKeys (see note below).
-#   2. Run: fdroid lint metadata/app.mmmap.yml
-#   3. Run: fdroid rewritemeta app.mmmap  (auto-formats fields)
-#
-# AllowedAPKSigningKeys — get your cert's SHA-256 fingerprint with:
-#   keytool -list -v -keystore mmmap-release.jks -alias mmmap \
-#       | grep "SHA-256"
-# Remove colons from the fingerprint before pasting here.
-# This enables the "signed-by-upstream" path: F-Droid verifies its unsigned
-# build byte-matches your signed GitHub Release APK, then serves your APK.
-
+AntiFeatures:
+  NonFreeNet:
+    en-US: "Dataset refresh contacts raw.githubusercontent.com (GitHub). Map tiles
+      are served by tiles.openfreemap.org.\n"
 Categories:
   - Navigation
 License: MIT
@@ -23,14 +10,7 @@ SourceCode: https://github.com/Rozkipz/Mmmap
 IssueTracker: https://github.com/Rozkipz/Mmmap/issues
 Changelog: https://github.com/Rozkipz/Mmmap/blob/HEAD/CHANGELOG.md
 
-# Name / Summary / Description are sourced from the Fastlane structure
-# in the upstream repo: fastlane/metadata/android/en-US/{title,short_description,full_description}.txt
-
-AntiFeatures:
-  NonFreeNet:
-    en-US: >
-      Dataset refresh contacts raw.githubusercontent.com (GitHub).
-      Map tiles are served by tiles.openfreemap.org.
+AutoName: Mmmap
 
 RepoType: git
 Repo: https://github.com/Rozkipz/Mmmap
@@ -41,9 +21,9 @@ Builds:
     versionCode: 10300
     commit: d9a5897e54d468634f2cee41815b05a97ff23d98
     subdir: app
-    ndk: r28c
     gradle:
       - yes
+    ndk: r28c
 
 AllowedAPKSigningKeys: 9359eb2699bd2f2a234a2a5379cb8c22a8ebe44ddb34b93192c73b7aeafde347
 
