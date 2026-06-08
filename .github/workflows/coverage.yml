@@ -103,7 +103,7 @@ jobs:
           EOF
 
       - name: Report coverage on PR
-        uses: madrapps/jacoco-report@v1.7.2
+        uses: madrapps/jacoco-report@v1.8.0
         with:
           paths: app/build/reports/coverage/test/debug/report-filtered.xml
           token: ${{ secrets.GITHUB_TOKEN }}
