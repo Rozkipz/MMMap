@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout Mmmap (provides fdroid/app.mmmap.yml to overlay)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: mmmap
 
