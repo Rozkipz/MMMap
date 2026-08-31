@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [1.5]
+
+- Split the release APK by ABI. Each architecture is now published as its own APK
+  (~31–36 MB instead of one 67 MB build carrying all four), stamped
+  `10 * <base versionCode> + <ABI offset>` so F-Droid clients resolve the right variant.
+  An unsplit `Mmmap-<code>-universal.apk` is still published for sideloading.
+- Fix `just run debug`, which launched `app.mmmap/.MainActivity` even though the debug
+  build carries `applicationIdSuffix = ".debug"`
+- Fix `just assemble-release` with no arguments failing under macOS's bash 3.2
+  (`"${ARGS[@]}"` on an empty array trips `set -u`)
+
 ## [1.4]
 
 - Disable AGP's "Dependency metadata" signing block (`dependenciesInfo.includeInApk = false`)

@@ -148,25 +148,64 @@ Each time you cut a new release, do these steps **before** tagging:
 # 1. Refresh the bundled DB
 just seed-db
 
-# 2. Add a fastlane changelog (versionCode = MAJOR*10000 + MINOR*100 + PATCH)
-echo "What changed in this release." \
-  > fastlane/metadata/android/en-US/changelogs/<versionCode>.txt
+# 2. Bump both literals in app/build.gradle.kts AND the versions in
+#    fdroid/app.mmmap.yml (bump-version keeps them in lockstep)
+just bump-version X.Y
 
-# 3. Update CHANGELOG.md
+# 3. Write the fastlane changelog — one file per ABI versionCode, because
+#    F-Droid resolves changelogs by each APK's own versionCode
+just changelog "What changed in this release."
 
-# 4. Add a new Builds: entry to fdroid/app.mmmap.yml:
-#    - versionName: 'X.Y.Z'
-#      versionCode: NNNNN
-#      commit: vX.Y.Z
-#      gradle:
-#        - yes
-#      output: app/build/outputs/apk/release/app-release-unsigned.apk
+# 4. Update CHANGELOG.md, then commit steps 1–4 and push
 
-# 5. Run the standard release pipeline
-just release X.Y.Z
+# 5. Release: builds one APK per ABI plus an unsplit universal APK into dist/,
+#    tags, and publishes them all to the GitHub Release
+just release X.Y
+
+# 6. Point the F-Droid recipe at the tagged commit (a full SHA, not a tag name)
+just fdroid-stamp-commit
 ```
 
-After the GitHub Release is published, F-Droid detects the new tag via `UpdateCheckMode: Tags`, builds from source, verifies the byte-match against your signed APK, and publishes automatically — no MR needed for subsequent releases.
+Then verify before touching the MR:
+
+```sh
+# mirrors fdroiddata's CI (schema, lint, rewritemeta no-op, checkupdates, scanner)
+gh workflow run verify-fdroid.yml -f version=X.Y
+```
+
+After the GitHub Release is published, F-Droid detects the new tag via `UpdateCheckMode: Tags`,
+reads the base versionCode out of `app/build.gradle.kts`, applies each `VercodeOperation` to
+generate the four build blocks, builds each from source, verifies the byte-match against the
+correspondingly-named signed APK from `Binaries:`, and publishes automatically — no MR needed
+for subsequent releases.
+
+### ABI split
+
+`Builds:` has one block per ABI. Each passes `abiFilter` via `gradleprops`, which makes
+`app/build.gradle.kts` emit a single-ABI APK stamped `10 * base + offset`:
+
+| ABI | offset | gradleprops | versionCode at base 10500 |
+|---|---|---|---|
+| `armeabi-v7a` | 1 | `abiFilter=armeabi-v7a` | 105001 |
+| `arm64-v8a` | 2 | `abiFilter=arm64-v8a` | 105002 |
+| `x86` | 3 | `abiFilter=x86` | 105003 |
+| `x86_64` | 4 | `abiFilter=x86_64` | 105004 |
+
+Three things must stay in sync, or F-Droid fails the build with
+`Unexpected versionCode in output`:
+
+- the offsets in `abiVersionCodeOffsets` (`app/build.gradle.kts`)
+- the `VercodeOperation` list (`fdroid/app.mmmap.yml`) — its **order must match the order of
+  the `Builds:` blocks**, because `checkupdates` deep-copies the last four blocks and zips
+  them against that list
+- the `Binaries:` filenames, which use `%c` and so must match what `just assemble-release`
+  writes into `dist/`
+
+The ordering `armeabi-v7a < arm64-v8a < x86 < x86_64` is mandated by F-Droid so clients
+resolve the right variant for their device.
+
+Note `fdroid rewritemeta` **strips comments**, and `verify-fdroid.yml` asserts it is a no-op —
+so keep `fdroid/app.mmmap.yml` free of comments and in canonical form.
 
 ---
 

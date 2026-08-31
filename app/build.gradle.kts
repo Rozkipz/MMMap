@@ -1,5 +1,22 @@
+import com.android.build.api.variant.FilterConfiguration.FilterType.ABI
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+// ABI split. F-Droid has no native support for split APKs — it ships one APK per ABI,
+// each needing its own versionCode, ordered armeabi-v7a < arm64-v8a < x86 < x86_64 so
+// clients resolve the right one. These offsets mirror the `VercodeOperation` entries in
+// fdroid/app.mmmap.yml (10 * <base versionCode> + N).
+val abiVersionCodeOffsets = mapOf(
+    "armeabi-v7a" to 1,
+    "arm64-v8a" to 2,
+    "x86" to 3,
+    "x86_64" to 4,
+)
+
+// -PabiFilter=<abi> produces a single-ABI APK; that is how each F-Droid build block is
+// invoked (via gradleprops). Without the property the build stays unsplit — all four ABIs
+// in one APK — so debug builds, `just install` and `just run` behave exactly as before.
+val abiFilter = (findProperty("abiFilter") as? String)?.takeIf { it.isNotBlank() }
 
 plugins {
     alias(libs.plugins.android.application)
@@ -30,8 +47,8 @@ android {
         // Hardcoded so fdroidserver's regex parser can extract the version at each
         // tagged commit (its checkupdates step doesn't read gradle.properties or
         // evaluate findProperty). Bumped by `just bump-version <X.Y>`.
-        versionCode = 10400
-        versionName = "1.4"
+        versionCode = 10500
+        versionName = "1.5"
         // -PversionCode / -PversionName still override (ad-hoc local builds);
         // the release workflow passes these but they match the hardcoded values.
         (findProperty("versionCode") as? String)?.toInt()?.let { versionCode = it }
@@ -70,6 +87,15 @@ android {
         }
     }
 
+    splits {
+        abi {
+            isEnable = abiFilter != null
+            reset()
+            abiFilter?.let { include(it) }
+            isUniversalApk = false
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -105,6 +131,19 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
+    }
+}
+
+// Stamp each output with `10 * <base versionCode> + <ABI offset>`. An unsplit build has no
+// ABI filter and gets offset 0, keeping it below every per-ABI APK of the same release.
+// Reading defaultConfig here also picks up any -PversionCode override applied above.
+androidComponents {
+    onVariants { variant ->
+        val base = android.defaultConfig.versionCode!!
+        variant.outputs.forEach { output ->
+            val abi = output.filters.find { it.filterType == ABI }?.identifier
+            output.versionCode.set(base * 10 + (abiVersionCodeOffsets[abi] ?: 0))
+        }
     }
 }
 

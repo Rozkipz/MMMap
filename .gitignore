@@ -23,3 +23,6 @@ keystore.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Release APKs staged by `just assemble-release`
+dist/

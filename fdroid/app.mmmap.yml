@@ -14,20 +14,53 @@ AutoName: Mmmap
 
 RepoType: git
 Repo: https://github.com/Rozkipz/Mmmap
-Binaries: https://github.com/Rozkipz/Mmmap/releases/download/v%v/app-release.apk
+Binaries: https://github.com/Rozkipz/Mmmap/releases/download/v%v/Mmmap-%c.apk
 
 Builds:
-  - versionName: '1.4'
-    versionCode: 10400
-    commit: cbe3b26352bc4f9c7f47d05cd4c42e5556bf4e3c
+  - versionName: '1.5'
+    versionCode: 105001
+    commit: TODO_FULL_SHA_OF_TAG
     subdir: app
     gradle:
       - yes
-    ndk: r28c
+    gradleprops:
+      - abiFilter=armeabi-v7a
+
+  - versionName: '1.5'
+    versionCode: 105002
+    commit: TODO_FULL_SHA_OF_TAG
+    subdir: app
+    gradle:
+      - yes
+    gradleprops:
+      - abiFilter=arm64-v8a
+
+  - versionName: '1.5'
+    versionCode: 105003
+    commit: TODO_FULL_SHA_OF_TAG
+    subdir: app
+    gradle:
+      - yes
+    gradleprops:
+      - abiFilter=x86
+
+  - versionName: '1.5'
+    versionCode: 105004
+    commit: TODO_FULL_SHA_OF_TAG
+    subdir: app
+    gradle:
+      - yes
+    gradleprops:
+      - abiFilter=x86_64
 
 AllowedAPKSigningKeys: 9359eb2699bd2f2a234a2a5379cb8c22a8ebe44ddb34b93192c73b7aeafde347
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v\d+\.\d+$
-CurrentVersion: '1.4'
-CurrentVersionCode: 10400
+VercodeOperation:
+  - 10 * %c + 1
+  - 10 * %c + 2
+  - 10 * %c + 3
+  - 10 * %c + 4
+CurrentVersion: '1.5'
+CurrentVersionCode: 105004

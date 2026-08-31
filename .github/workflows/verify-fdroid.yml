@@ -110,10 +110,14 @@ jobs:
           # F-Droid scans the binary at the Binaries URL. Mirror that by
           # downloading the published APK to where the scanner looks.
           mkdir -p tmp/binaries
-          VCODE=$(grep -E '^\s+versionCode:\s+[0-9]+' metadata/${CHANGED}.yml \
-                  | tail -1 | awk '{print $2}')
-          curl -sfL "https://github.com/Rozkipz/Mmmap/releases/download/v${{ inputs.version }}/app-release.apk" \
-            -o "tmp/binaries/${CHANGED}_${VCODE}.binary.apk"
+          # One APK per ABI now, each published as Mmmap-<versionCode>.apk to match the
+          # `Binaries:` pattern. Scan every one — they differ only in native libs, but a
+          # signing-block or non-free finding could in principle hit just one.
+          for VCODE in $(grep -E '^\s+versionCode:\s+[0-9]+' metadata/${CHANGED}.yml | awk '{print $2}'); do
+            echo "downloading Mmmap-${VCODE}.apk"
+            curl -sfL "https://github.com/Rozkipz/Mmmap/releases/download/v${{ inputs.version }}/Mmmap-${VCODE}.apk" \
+              -o "tmp/binaries/${CHANGED}_${VCODE}.binary.apk"
+          done
           set -o pipefail
           fdroid scanner "$CHANGED" 2>&1 | tee /tmp/scan.log
           if grep -qE "^ERROR |Scanner found [1-9]" /tmp/scan.log; then

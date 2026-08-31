@@ -38,7 +38,9 @@
 ## Install
 
 ### Download (sideload)
-1. Download `Mmmap_$version.apk` from the [latest release](https://github.com/Rozkipz/Mmmap/releases/latest)
+1. Grab an APK from the [latest release](https://github.com/Rozkipz/Mmmap/releases/latest).
+   `Mmmap-*-universal.apk` works on any device; the per-architecture builds are ~30 MB
+   smaller if you know yours (`arm64-v8a` for essentially every phone since 2016).
 2. On your phone: **Settings → Security → Install unknown apps** → allow your browser
 3. Open the downloaded APK and tap **Install**
 

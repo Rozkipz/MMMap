@@ -64,14 +64,16 @@ jobs:
           printf 'storeFile=mmmap-release.jks\nstorePassword=%s\nkeyAlias=mmmap\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > keystore.properties
 
-      - name: Assemble release APK
+      # One APK per ABI plus an unsplit universal APK, staged into dist/ as
+      # Mmmap-<versionCode>.apk to match the `Binaries:` URL in the F-Droid recipe.
+      - name: Assemble release APKs
         run: just assemble-release ${{ inputs.version }} ${{ steps.ver.outputs.code }}
 
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v7
         with:
-          name: mmmap-${{ inputs.version }}.apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: mmmap-${{ inputs.version }}-apks
+          path: dist/*.apk
           retention-days: 7
 
   publish:
@@ -88,11 +90,11 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v4
 
-      - name: Download APK
+      - name: Download APKs
         uses: actions/download-artifact@v8
         with:
-          name: mmmap-${{ inputs.version }}.apk
-          path: app/build/outputs/apk/release
+          name: mmmap-${{ inputs.version }}-apks
+          path: dist
 
       - name: Create GitHub Release
         env:

@@ -182,7 +182,11 @@ class MapViewModel @Inject constructor(
     fun clearImportExportMessage() { _importExportMessage.value = null }
 
     fun forceRefresh() {
-        viewModelScope.launch(Dispatchers.IO) {
+        // Deliberately NOT on Dispatchers.IO: neither call blocks — clearSha() is a
+        // DataStore suspend that dispatches internally and enqueueUniquePeriodicWork is
+        // async — while a real IO thread races advanceUntilIdle() in tests, making
+        // MapViewModelTest.forceRefresh_clearsShaAndEnqueuesWork fail nondeterministically.
+        viewModelScope.launch {
             syncPrefs.clearSha()
             val request = PeriodicWorkRequestBuilder<DatasetSyncWorker>(1, TimeUnit.DAYS)
                 .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
