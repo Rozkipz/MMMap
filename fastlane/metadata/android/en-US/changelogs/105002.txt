@@ -1,1 +1,1 @@
-Split the APK by CPU architecture — downloads are now about half the size.
+Per-architecture APKs — about half the download size. Fixes pins vanishing when the map is rotated, crashes on Directions and some website links, and several sync and memory issues.

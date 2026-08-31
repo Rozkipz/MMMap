@@ -12,6 +12,22 @@
   build carries `applicationIdSuffix = ".debug"`
 - Fix `just assemble-release` with no arguments failing under macOS's bash 3.2
   (`"${ARGS[@]}"` on an empty array trips `set -u`)
+- Fix all restaurants disappearing when the map is rotated — visible-region screen
+  corners were being used as geographic SW/NE, inverting the latitude bounds
+- Fix the map view never being destroyed when leaving the Map tab, leaking a native
+  map, GL renderer and connectivity receiver on every Map↔Nearby switch
+- Fix 10 restaurants with no price data (including a 1-Star) showing up under the
+  `$$$$` filter, and rendering as "none" in the detail sheet
+- Fix crashes when tapping Directions on a device with no maps app, or the website
+  button on the one restaurant with a malformed URL in the dataset
+- Fix a corrupt or full tile cache crashing the app on every launch
+- Harden dataset sync: validate the CSV header so an upstream column change can't
+  silently corrupt awards, bound multi-line record accumulation so one stray quote
+  can't drop thousands of rows, and stop a tiny parse replacing the full dataset
+- Fix the Near Me tab leaking a database observer on every visit, and show a message
+  instead of an empty list when location is unavailable
+- Fix export reporting success when the file could not be written
+- Fix a manual light/dark theme choice resetting on rotation
 
 ## [1.4]
 
