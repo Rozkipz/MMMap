@@ -26,6 +26,27 @@ class SyncPreferences @Inject constructor(
         }
     }
 
+    /**
+     * Records [sha] as the already-synced revision, but only if nothing is stored yet.
+     *
+     * Called once on first launch with the SHA of the CSV the bundled database was built
+     * from. Without it the first [app.mmmap.data.sync.DatasetSyncWorker] run sees a null
+     * SHA, decides it is out of date, and re-downloads the whole ~17.5 MB CSV to rebuild
+     * rows the APK already shipped.
+     *
+     * Deliberately seeds rather than falling back at read time: Room's seed asset is only
+     * materialised on a fresh install, so an upgrade must keep whatever SHA the previous
+     * version actually synced to.
+     */
+    suspend fun seedShaIfAbsent(sha: String) {
+        dataStore.edit {
+            if (it[keySha] == null) {
+                it[keySha] = sha
+                it[keySyncAt] = System.currentTimeMillis()
+            }
+        }
+    }
+
     suspend fun clearSha() {
         dataStore.edit { it.remove(keySha) }
     }

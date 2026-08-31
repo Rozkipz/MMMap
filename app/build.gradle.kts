@@ -107,10 +107,10 @@ android {
     }
 
     androidResources {
-        // Prevent aapt2 from compressing the bundled SQLite asset.
-        // Android's AssetManager can't stream compressed assets >1 MB, which
-        // would cause Room's createFromAsset to throw on first launch.
-        noCompress += "db"
+        // Store the gzipped SQLite seed as-is. AssetManager can't stream a *compressed*
+        // asset larger than ~1 MB, and re-deflating an already-gzipped file gains nothing
+        // anyway — we inflate it ourselves in DatabaseModule.
+        noCompress += "seed"
     }
 
     packaging {

@@ -74,7 +74,7 @@ F-Droid's `checkupdates` regex-scans the `versionCode = <digits>` and
 
 ## Bundled restaurant data
 
-The asset at `app/src/main/assets/michelin.db` is a SQLite snapshot of the upstream
+The asset at `app/src/main/assets/michelin.db.seed` is a **gzipped** SQLite snapshot of the upstream
 [ngshiheng/michelin-my-maps](https://github.com/ngshiheng/michelin-my-maps) dataset.
 Regenerate it with:
 
@@ -84,7 +84,23 @@ python3 scripts/seed_db.py
 
 This requires Python 3 (stdlib only — no pip dependencies). The script downloads the
 current CSV, parses it with the same logic as `DatasetSyncWorker`, and writes a Room v2
-SQLite file to `app/src/main/assets/michelin.db`.
+SQLite file, gzips it to `app/src/main/assets/michelin.db.seed` (~20 MB → ~8 MB), and
+records the upstream CSV's blob SHA in `app/src/main/res/values/dataset_provenance.xml`.
+
+Two things to know about the asset:
+
+- It is **not** named `.gz` on purpose. AGP's asset merger silently expands `foo.ext.gz`
+  back to `foo.ext`, which would leave the app looking for a file that isn't there.
+  `noCompress += "seed"` then keeps it stored, because AssetManager cannot stream a
+  compressed asset larger than about 1 MB. `DatabaseModule` inflates it through
+  `Room.createFromInputStream` on first open.
+- The recorded SHA is seeded into `SyncPreferences` on first launch, so the first
+  `DatasetSyncWorker` run is a no-op unless upstream has actually changed. Without it
+  every fresh install downloads the full ~17.5 MB CSV to rebuild rows it already shipped.
+  It is committed rather than fetched during the build — a network call at build time
+  would break F-Droid's reproducible-build verification.
+
+Regenerating requires Python 3.10 or newer (the script uses `str | None` annotations).
 
 The app's `DatasetSyncWorker` updates the database at runtime when the upstream SHA changes,
 so the bundled file only needs to be refreshed periodically (e.g. before each release).

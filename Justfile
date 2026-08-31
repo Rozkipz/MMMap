@@ -220,9 +220,24 @@ release version:
 
 # ─── Phase 2 (F-Droid) ────────────────────────────────────────────────────────
 
-# Download the upstream MICHELIN CSV and regenerate app/src/main/assets/michelin.db
+# Download the upstream MICHELIN CSV and regenerate the bundled seed asset
+# Needs Python 3.10+ (the script uses `str | None` annotations); macOS ships 3.9.
 seed-db:
-    python3 scripts/seed_db.py
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PY=""
+    for c in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
+        if command -v "$c" >/dev/null 2>&1 && \
+           "$c" -c 'import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)'; then
+            PY="$c"; break
+        fi
+    done
+    if [[ -z "$PY" ]]; then
+        echo "error: need Python 3.10+ on PATH (found $(python3 --version 2>&1))" >&2
+        exit 1
+    fi
+    echo "using $PY ($($PY --version))"
+    "$PY" scripts/seed_db.py
 
 # Validate F-Droid metadata YAML (run from inside a fdroiddata clone)
 fdroid-lint path='../fdroiddata':

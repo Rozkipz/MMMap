@@ -9,6 +9,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import app.mmmap.data.sync.DatasetSyncWorker
+import app.mmmap.data.sync.SyncPreferences
 import app.mmmap.map.TileCacheManager
 import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
@@ -24,6 +25,7 @@ class MmmapApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var tileCacheManager: TileCacheManager
+    @Inject lateinit var syncPrefs: SyncPreferences
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -38,6 +40,11 @@ class MmmapApplication : Application(), Configuration.Provider {
         // Must not throw: an ambient-cache failure here would crash the app on every
         // single launch, with no recovery short of clearing app data.
         appScope.launch { runCatching { tileCacheManager.applyStoredSize() } }
+        appScope.launch {
+            runCatching {
+                syncPrefs.seedShaIfAbsent(getString(R.string.bundled_csv_sha))
+            }
+        }
         enqueueSyncIfNeeded()
     }
 

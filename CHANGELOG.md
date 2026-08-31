@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+- Ship the bundled restaurant database gzipped (~20 MB → ~8 MB), inflating it on first
+  open. Cuts roughly 12 MB from every APK
+- Record the bundled dataset's upstream revision and seed it on first launch, so a fresh
+  install no longer immediately re-downloads the full ~17.5 MB CSV to rebuild data it
+  already shipped with
+- Refresh the bundled dataset to the current upstream snapshot (19,460 restaurants,
+  up from 19,036)
+- Add a weekly `Refresh dataset` workflow that regenerates and gzips the bundled data
+  when upstream changes, and opens a PR
+
 ## [1.5]
 
 - Split the release APK by ABI. Each architecture is now published as its own APK

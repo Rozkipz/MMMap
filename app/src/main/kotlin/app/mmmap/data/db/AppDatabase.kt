@@ -21,6 +21,16 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         const val DB_NAME = "michelin.db"
 
+        /**
+         * Gzipped SQLite seed shipped in assets (~8 MB vs ~20 MB raw).
+         *
+         * Deliberately *not* named `.gz`: AGP's asset merger silently expands `*.gz`
+         * back to the bare filename, which would leave this asset missing at runtime.
+         * `noCompress += "seed"` keeps it stored as-is so AssetManager can stream it,
+         * and DatabaseModule inflates it on first open. Regenerate with `just seed-db`.
+         */
+        const val SEED_ASSET = "michelin.db.seed"
+
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""

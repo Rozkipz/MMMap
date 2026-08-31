@@ -47,7 +47,11 @@ DI: Hilt throughout. `@HiltViewModel` on all ViewModels.
 
 ## Data
 
-**Restaurant DB** — bundled SQLite asset (`app/src/main/assets/michelin.db`), refreshed periodically by `DatasetSyncWorker` pulling from `ngshiheng/michelin-my-maps` on GitHub. ~19 000 rows.
+**Restaurant DB** — bundled SQLite asset (`app/src/main/assets/michelin.db.seed`, gzipped, ~8 MB), refreshed periodically by `DatasetSyncWorker` pulling from `ngshiheng/michelin-my-maps` on GitHub. ~19 000 rows.
+
+**Seed asset gotchas** — the file is gzip, inflated by `DatabaseModule` via `Room.createFromInputStream`. Do NOT rename it to `*.gz`: AGP's asset merger silently expands `foo.ext.gz` back to `foo.ext`, so the asset would be missing at runtime. `noCompress += "seed"` keeps it stored, since AssetManager can't stream a compressed asset over ~1 MB. Regenerate with `just seed-db` (needs Python 3.10+; the script uses `str | None`).
+
+**Bundled SHA** — `scripts/seed_db.py` also writes the upstream CSV's blob SHA to `app/src/main/res/values/dataset_provenance.xml`. `MmmapApplication` seeds it into `SyncPreferences` on first launch so the first sync is a no-op unless upstream actually moved; without it every fresh install re-downloads the whole ~17.5 MB CSV. Never fetch this at build time — that would break F-Droid's reproducible build.
 
 **Award column values** (exact strings, case-sensitive):
 - `1 Star`, `2 Stars`, `3 Stars`, `Bib Gourmand`, `Selected Restaurants`
