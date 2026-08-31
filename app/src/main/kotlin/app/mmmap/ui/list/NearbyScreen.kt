@@ -1,5 +1,9 @@
 package app.mmmap.ui.list
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,12 +37,27 @@ fun NearbyScreen(
     viewModel: NearbyViewModel = hiltViewModel(),
 ) {
     val nearby by viewModel.nearby.collectAsState()
+    val locationMissing by viewModel.locationMissing.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.load() }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Near Me") }) }
     ) { padding ->
+        // Without this the "no location" case is indistinguishable from "nothing nearby".
+        if (locationMissing) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(32.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "Location unavailable. Grant location access to see restaurants near you.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            return@Scaffold
+        }
         LazyColumn(contentPadding = padding) {
             items(nearby, key = { it.first.id }) { (restaurant, distanceKm) ->
                 NearbyRow(

@@ -357,11 +357,12 @@ fun MapScreen(
                     )
                     mapHolder.mapView = this
                     onCreate(null)
-                    // Activity is already RESUMED when this factory runs, so call
-                    // onStart/onResume immediately. The DisposableEffect handles
-                    // future background/foreground transitions.
-                    onStart()
-                    onResume()
+                    // Deliberately no onStart()/onResume() here. This factory runs in the
+                    // Applier phase, before the DisposableEffect above registers its
+                    // observer — and LifecycleRegistry.addObserver replays ON_START/
+                    // ON_RESUME to bring a new observer up to the current state. Calling
+                    // them here too double-activates MapLibre's refcounted
+                    // ConnectivityReceiver, which then never unregisters.
                     getMapAsync { libMap ->
                         mapHolder.map = libMap
                         val initialUrl = if (isDarkTheme) TILE_STYLE_DARK_URL else TILE_STYLE_URL
@@ -373,15 +374,17 @@ fun MapScreen(
                             val pos = libMap.cameraPosition
                             val t = pos.target ?: return@addOnCameraIdleListener
                             viewModel.saveLastCamera(t.latitude, t.longitude, pos.zoom)
-                            val region = libMap.projection.visibleRegion
-                            val sw = region.nearLeft  ?: return@addOnCameraIdleListener
-                            val ne = region.farRight  ?: return@addOnCameraIdleListener
+                            // nearLeft/farRight are *screen* corners — they only coincide
+                            // with geographic SW/NE at bearing 0. Rotating the map would
+                            // otherwise yield minLat > maxLat, and the DAO's BETWEEN then
+                            // matches nothing, so every pin vanishes until you rotate back.
+                            val bounds = libMap.projection.visibleRegion.latLngBounds
                             viewModel.updateBounds(
                                 MapBounds(
-                                    minLat = sw.latitude,
-                                    maxLat = ne.latitude,
-                                    minLon = sw.longitude,
-                                    maxLon = ne.longitude,
+                                    minLat = bounds.latitudeSouth,
+                                    maxLat = bounds.latitudeNorth,
+                                    minLon = bounds.longitudeWest,
+                                    maxLon = bounds.longitudeEast,
                                 )
                             )
                         }
@@ -456,6 +459,17 @@ fun MapScreen(
                 val source = map.style?.getSourceAs<GeoJsonSource>(SOURCE_ID)
                 if (source != null) source.setGeoJson(collection)
                 else mapHolder.pendingRestaurantCollection = collection
+            },
+            // Without this the MapView is never torn down when MapScreen leaves
+            // composition — which the NavHost does on every Map→Nearby switch — leaking a
+            // native map, a GL renderer and a registered connectivity receiver each time.
+            onRelease = { mv ->
+                mv.onPause()
+                mv.onStop()
+                mv.onDestroy()
+                mapHolder.mapView = null
+                mapHolder.map = null
+                mapHolder.appliedStyleUrl = null
             },
             modifier = Modifier.fillMaxSize(),
         )

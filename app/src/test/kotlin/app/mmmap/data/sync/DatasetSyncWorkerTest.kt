@@ -139,6 +139,52 @@ class DatasetSyncWorkerTest {
         coVerify { prefs.setLastCsvSha("fresh-sha") }
     }
 
+    // ── CSV schema validation ─────────────────────────────────────────────────
+
+    @Test fun shiftedColumns_returnFailureRatherThanCorruptData() = runTest {
+        // A column inserted upstream still parses positionally, so award would silently
+        // become a URL and award filtering would return nothing — while the sync looked
+        // successful and stored the SHA, never to be retried.
+        val header = "Name,Address,Location,Price,Cuisine,Longitude,Latitude,PhoneNumber," +
+            "Url,WebsiteUrl,NewColumn,Award,GreenStar,FacilitiesAndServices,Description"
+        val row = "R,1 St,London,£££,French,-0.1,51.5,+44,https://guide.michelin.com/1,,x,1 Star,False,,"
+        coEvery { contentsApi.csvMetadata() } returns GitHubContentsResponse(sha = "new-sha")
+        coEvery { prefs.lastCsvSha() } returns null
+        stubHttpResponse(header + "\n" + (1..200).joinToString("\n") { row })
+
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.retry(), result)
+        coVerify(exactly = 0) { db.withTransaction(any()) }
+        coVerify(exactly = 0) { prefs.setLastCsvSha(any()) }
+    }
+
+    // ── relative row guard ────────────────────────────────────────────────────
+
+    @Test fun farFewerRowsThanExisting_returnsFailureAndKeepsSha() = runTest {
+        // Clears the absolute floor of 100 but is a fraction of what we already hold.
+        coEvery { contentsApi.csvMetadata() } returns GitHubContentsResponse(sha = "new-sha")
+        coEvery { prefs.lastCsvSha() } returns null
+        coEvery { dao.count() } returns 19_000
+        stubHttpResponse(csvWithRows(200))
+
+        val result = worker.doWork()
+
+        assertEquals(ListenableWorker.Result.failure(), result)
+        coVerify(exactly = 0) { db.withTransaction(any()) }
+        coVerify(exactly = 0) { prefs.setLastCsvSha(any()) }
+    }
+
+    // ── price normalisation ───────────────────────────────────────────────────
+
+    @Test fun literalNonePrice_becomesNull() {
+        // LENGTH("none") is 4, which would file the row under the top price tier.
+        assertEquals(null, DatasetSyncWorker.normalisePrice("none"))
+        assertEquals(null, DatasetSyncWorker.normalisePrice("None"))
+        assertEquals(null, DatasetSyncWorker.normalisePrice("  "))
+        assertEquals("££££", DatasetSyncWorker.normalisePrice(" ££££ "))
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private fun stubHttpResponse(body: String, statusCode: Int = 200) {
@@ -155,7 +201,9 @@ class DatasetSyncWorkerTest {
     }
 
     private fun csvWithRows(count: Int): String {
-        val header = "Name,Address,Location,Price,Cuisine,Longitude,Latitude,Phone,Url,Website,Award,GreenStar,Facilities,Description"
+        // Must match the real upstream CSV verbatim — parseCsv validates it, since every
+        // field is read positionally and a shifted column would parse into the wrong property.
+        val header = "Name,Address,Location,Price,Cuisine,Longitude,Latitude,PhoneNumber,Url,WebsiteUrl,Award,GreenStar,FacilitiesAndServices,Description"
         val rows = (1..count).joinToString("\n") { i ->
             "Restaurant $i,1 Test St,London,£££,French,-0.1,51.5,+44 20 0000 $i,https://guide.michelin.com/$i,,1 MICHELIN Star,False,,"
         }

@@ -9,6 +9,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -24,7 +25,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val systemDark = isSystemInDarkTheme()
-            var themeMode by remember { mutableStateOf(ThemeMode.AUTO) }
+            // rememberSaveable: MainActivity declares no configChanges, so a plain remember
+            // drops a manual light/dark choice on every rotation.
+            var themeMode by rememberSaveable { mutableStateOf(ThemeMode.AUTO) }
             val darkTheme = when (themeMode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK  -> true

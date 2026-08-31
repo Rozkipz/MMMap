@@ -35,7 +35,9 @@ class MmmapApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         MapLibre.getInstance(this)
-        appScope.launch { tileCacheManager.applyStoredSize() }
+        // Must not throw: an ambient-cache failure here would crash the app on every
+        // single launch, with no recovery short of clearing app data.
+        appScope.launch { runCatching { tileCacheManager.applyStoredSize() } }
         enqueueSyncIfNeeded()
     }
 

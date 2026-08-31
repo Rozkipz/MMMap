@@ -34,6 +34,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -121,21 +122,27 @@ class MapViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 100L)
 
     fun setCacheSizeMb(mb: Long) {
-        viewModelScope.launch { tileCacheManager.setMaxSizeMb(mb) }
+        // MapLibre's OfflineManager reports failures by resuming the continuation with an
+        // exception. Nothing catches it, so a corrupt or full ambient cache would otherwise
+        // take the whole process down from a settings tap.
+        viewModelScope.launch { runCatching { tileCacheManager.setMaxSizeMb(mb) } }
     }
 
     fun clearTileCache() {
-        viewModelScope.launch { tileCacheManager.clearAmbientCache() }
+        viewModelScope.launch { runCatching { tileCacheManager.clearAmbientCache() } }
     }
 
     val debugState = MutableStateFlow<DebugState?>(null)
 
     fun loadDebugInfo() {
         viewModelScope.launch {
-            val workInfos = workManager
-                    .getWorkInfosForUniqueWork(DatasetSyncWorker.TAG)
-                    .get()
-            val workInfo = workInfos.firstOrNull()
+            // getWorkInfosForUniqueWork returns a ListenableFuture; .get() would block,
+            // and viewModelScope is Main.immediate — an ANR waiting to happen. The Flow
+            // variant suspends instead.
+            val workInfo = workManager
+                .getWorkInfosForUniqueWorkFlow(DatasetSyncWorker.TAG)
+                .first()
+                .firstOrNull()
             debugState.value = DebugState(
                 dbRestaurantCount = repo.count(),
                 viewportCount     = restaurants.value.size,
@@ -156,7 +163,12 @@ class MapViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val json = PrettyJson.encodeToString(visitedRepo.getAll())
-                context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                // "wt" truncates: plain "w" leaves trailing bytes from a longer previous
+                // export, producing invalid JSON that import then rejects. A null stream is
+                // a real failure, not something to report success for.
+                val stream = context.contentResolver.openOutputStream(uri, "wt")
+                    ?: error("Could not open $uri for writing")
+                stream.use { it.write(json.toByteArray()) }
                 _importExportMessage.value = "Exported ${visitedRepo.count()} places"
             }.onFailure {
                 _importExportMessage.value = "Export failed"

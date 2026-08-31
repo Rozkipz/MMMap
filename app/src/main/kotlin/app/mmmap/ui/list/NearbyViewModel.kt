@@ -14,6 +14,7 @@ import app.mmmap.domain.model.Restaurant
 import app.mmmap.util.haversineKm
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -31,9 +32,16 @@ class NearbyViewModel @Inject constructor(
     private val _locationMissing = MutableStateFlow(false)
     val locationMissing: StateFlow<Boolean> = _locationMissing
 
+    private var loadJob: Job? = null
+
     fun load() {
-        viewModelScope.launch {
+        // The screen's LaunchedEffect(Unit) re-runs on every re-entry, and the nav graph
+        // keeps this ViewModel alive across tab switches — so without cancelling the
+        // previous job each visit would leave another Room collector running forever.
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             val location = bestLastLocation() ?: run { _locationMissing.value = true; return@launch }
+            _locationMissing.value = false
             val lat = location.latitude
             val lon = location.longitude
             val delta = 0.5

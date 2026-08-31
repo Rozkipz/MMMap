@@ -322,9 +322,7 @@ class MapViewModelTest {
     // ── loadDebugInfo ─────────────────────────────────────────────────────────
 
     @Test fun loadDebugInfo_populatesDebugState() = runTest {
-        val future = mockk<com.google.common.util.concurrent.ListenableFuture<List<androidx.work.WorkInfo>>>(relaxed = true)
-        every { workManager.getWorkInfosForUniqueWork(any()) } returns future
-        every { future.get() } returns emptyList()
+        every { workManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
         coEvery { repo.count() } returns 99
         coEvery { syncPrefs.lastSyncAt() } returns 1_000L
         coEvery { syncPrefs.lastCsvSha() } returns "abcdef1234567890"
@@ -340,12 +338,10 @@ class MapViewModelTest {
     }
 
     @Test fun loadDebugInfo_workerStateFromWorkInfo() = runTest {
-        val future = mockk<com.google.common.util.concurrent.ListenableFuture<List<androidx.work.WorkInfo>>>(relaxed = true)
         val workInfo = mockk<androidx.work.WorkInfo>(relaxed = true)
         every { workInfo.state } returns androidx.work.WorkInfo.State.RUNNING
         every { workInfo.nextScheduleTimeMillis } returns Long.MAX_VALUE
-        every { workManager.getWorkInfosForUniqueWork(any()) } returns future
-        every { future.get() } returns listOf(workInfo)
+        every { workManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(listOf(workInfo))
         coEvery { repo.count() } returns 0
         coEvery { syncPrefs.lastSyncAt() } returns null
         coEvery { syncPrefs.lastCsvSha() } returns null

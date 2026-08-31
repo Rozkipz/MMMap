@@ -21,7 +21,7 @@ interface RestaurantDao {
         WHERE latitude BETWEEN :minLat AND :maxLat
           AND longitude BETWEEN :minLon AND :maxLon
           AND (:awardsAll = 1 OR award IN (:awards))
-          AND (:tiersAll = 1 OR LENGTH(price) IN (:priceTiers))
+          AND (:tiersAll = 1 OR (price GLOB '[^a-zA-Z]*' AND LENGTH(price) IN (:priceTiers)))
         ORDER BY name ASC
     """)
     fun observeInBounds(

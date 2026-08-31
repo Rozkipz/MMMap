@@ -34,7 +34,13 @@ class DatasetSyncWorker @AssistedInject constructor(
             if (sha == prefs.lastCsvSha()) return@withContext Result.success()
 
             val entities = downloadAndParseCsv()
-            if (entities.size < 100) return@withContext Result.failure()
+            // Absolute floor for the very first sync, plus a relative floor once we already
+            // hold data: a parse that yields ≥100 rows but far fewer than we have would
+            // otherwise wipe the dataset AND store the SHA, so it would never be retried.
+            val existing = db.restaurantDao().count()
+            if (entities.size < MIN_ROWS || entities.size < existing / 2) {
+                return@withContext Result.failure()
+            }
 
             db.withTransaction {
                 db.restaurantDao().deleteAll()
@@ -60,12 +66,42 @@ class DatasetSyncWorker @AssistedInject constructor(
     companion object {
         const val TAG = "DatasetSyncWorker"
 
+        /** Absolute floor on a parsed dataset; the real one is ~19,000 rows. */
+        internal const val MIN_ROWS = 100
+
         // CSV columns (0-indexed):
         // 0:Name 1:Address 2:Location 3:Price 4:Cuisine 5:Longitude 6:Latitude
         // 7:PhoneNumber 8:Url 9:WebsiteUrl 10:Award 11:GreenStar 12:FacilitiesAndServices 13:Description
+        internal val EXPECTED_HEADER = listOf(
+            "Name", "Address", "Location", "Price", "Cuisine", "Longitude", "Latitude",
+            "PhoneNumber", "Url", "WebsiteUrl", "Award", "GreenStar",
+            "FacilitiesAndServices", "Description",
+        )
+
+        /**
+         * Thrown when the upstream CSV's columns no longer match [EXPECTED_HEADER].
+         *
+         * Every field is read positionally, so an inserted or reordered column would parse
+         * cleanly into the wrong properties — awards becoming URLs, for instance, which
+         * silently breaks award filtering while still looking like a successful sync.
+         */
+        class CsvSchemaException(message: String) : IOException(message)
+
         internal fun parseCsv(reader: BufferedReader): List<RestaurantEntity> {
             val entities = mutableListOf<RestaurantEntity>()
-            for (record in csvRecords(reader).drop(1)) {
+            val records = csvRecords(reader)
+            val header = records.firstOrNull()?.map { it.trim().trim('"') }
+                ?: throw CsvSchemaException("CSV was empty")
+            // Trailing columns may be added upstream without breaking positional reads;
+            // the prefix we actually index into must match exactly.
+            val expected = EXPECTED_HEADER.take(minOf(EXPECTED_HEADER.size, header.size))
+            val actual = header.take(expected.size)
+            if (actual.map { it.lowercase() } != expected.map { it.lowercase() }) {
+                throw CsvSchemaException(
+                    "Unexpected CSV columns: expected $expected but got $actual"
+                )
+            }
+            for (record in records.drop(1)) {
                 if (record.size < 13) continue
                 val url = record[8].trim().takeIf { it.isNotEmpty() } ?: continue
                 val lat = record[6].toDoubleOrNull() ?: continue
@@ -76,7 +112,7 @@ class DatasetSyncWorker @AssistedInject constructor(
                         name                  = record[0].trim(),
                         address               = record[1].trim(),
                         location              = record[2].trim().takeIf { it.isNotEmpty() },
-                        price                 = record[3].trim().takeIf { it.isNotEmpty() },
+                        price                 = normalisePrice(record[3]),
                         cuisine               = record[4].trim().takeIf { it.isNotEmpty() },
                         longitude             = lon,
                         latitude              = lat,
@@ -93,18 +129,38 @@ class DatasetSyncWorker @AssistedInject constructor(
             return entities
         }
 
-        // Minimal RFC 4180 parser. Accumulates lines until the running quote count is even
-        // (i.e. we're not inside a quoted field), then emits one complete record.
+        // The upstream dataset writes "none" where a restaurant has no price band.
+        // LENGTH("none") is 4, which would otherwise place it in the top price tier
+        // alongside "$$$$" / "€€€€" — so normalise it away at the point of parse.
+        internal fun normalisePrice(raw: String): String? =
+            raw.trim().takeIf { it.isNotEmpty() && !it.equals("none", ignoreCase = true) }
+
+        // A record may legitimately span several lines when a field is quoted. Accumulate
+        // until the running quote count is even, i.e. we're no longer inside a quoted field.
+        //
+        // MAX_PENDING_LINES bounds that accumulation: one stray unescaped quote would
+        // otherwise make the count odd forever, glue the entire remainder of the file into
+        // a single record, and silently drop every row after it (while still clearing the
+        // row-count guard). Give up on the run instead and carry on with the next line.
+        private const val MAX_PENDING_LINES = 64
+
         internal fun csvRecords(reader: BufferedReader): List<List<String>> {
             val records = mutableListOf<List<String>>()
             val pending = StringBuilder()
+            var pendingLines = 0
             reader.forEachLine { line ->
                 if (pending.isNotEmpty()) pending.append('\n')
                 pending.append(line)
-                // Odd number of quote chars means we're still inside a quoted field
+                pendingLines++
                 if (pending.count { it == '"' } % 2 == 0) {
                     records.add(splitCsvRecord(pending.toString()))
                     pending.clear()
+                    pendingLines = 0
+                } else if (pendingLines >= MAX_PENDING_LINES) {
+                    // Unbalanced quote — emit what we have and resynchronise.
+                    records.add(splitCsvRecord(pending.toString()))
+                    pending.clear()
+                    pendingLines = 0
                 }
             }
             if (pending.isNotEmpty()) records.add(splitCsvRecord(pending.toString()))

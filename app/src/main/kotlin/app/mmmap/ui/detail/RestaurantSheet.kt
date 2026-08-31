@@ -2,6 +2,8 @@ package app.mmmap.ui.detail
 
 import android.content.Intent
 import android.net.Uri
+import app.mmmap.ui.launchOrToast
+import app.mmmap.ui.openUrl
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -182,7 +184,10 @@ internal fun RestaurantSheetContent(
             if (phone != null) {
                 IconButton(
                     onClick = {
-                        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+                        context.launchOrToast(
+                            Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")),
+                            "No dialler app available",
+                        )
                     },
                     modifier = Modifier.size(56.dp),
                 ) { Icon(Icons.Default.Phone, contentDescription = "Call", modifier = Modifier.size(28.dp)) }
@@ -190,7 +195,7 @@ internal fun RestaurantSheetContent(
             restaurant.websiteUrl?.let { url ->
                 IconButton(
                     onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        context.openUrl(url)
                     },
                     modifier = Modifier.size(56.dp),
                 ) { Icon(Icons.Default.Public, contentDescription = "Website", modifier = Modifier.size(28.dp)) }
@@ -200,7 +205,10 @@ internal fun RestaurantSheetContent(
                     val uri = Uri.parse(
                         "geo:${restaurant.latitude},${restaurant.longitude}?q=${Uri.encode(restaurant.name)}"
                     )
-                    context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    context.launchOrToast(
+                        Intent(Intent.ACTION_VIEW, uri),
+                        "No maps app available",
+                    )
                 },
                 modifier = Modifier.size(56.dp),
             ) { Icon(Icons.Default.DirectionsCar, contentDescription = "Directions", modifier = Modifier.size(28.dp)) }
@@ -210,7 +218,7 @@ internal fun RestaurantSheetContent(
 
         Button(
             onClick = {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(restaurant.michelinUrl)))
+                context.openUrl(restaurant.michelinUrl)
             },
             modifier = Modifier.fillMaxWidth(),
         ) {

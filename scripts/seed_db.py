@@ -93,6 +93,17 @@ def nonempty(s: str) -> str | None:
     return v if v else None
 
 
+def price(s: str) -> str | None:
+    """Normalise the price band, dropping the literal "none" the upstream CSV uses.
+
+    Price tiers are derived at query time as LENGTH(price), and LENGTH("none") is 4 —
+    which would file those rows under the most expensive tier alongside "$$$$".
+    Mirrors DatasetSyncWorker.normalisePrice.
+    """
+    v = s.strip()
+    return None if not v or v.lower() == "none" else v
+
+
 def download_csv(url: str) -> list[list[str]]:
     print(f"Downloading CSV from {url} …", file=sys.stderr)
     with urllib.request.urlopen(url) as resp:
@@ -128,7 +139,7 @@ def parse_rows(rows: list[list[str]]) -> list[tuple]:
             nonempty(row[10]),    # award
             green_star,           # greenStar
             nonempty(row[4]),     # cuisine
-            nonempty(row[3]),     # price
+            price(row[3]),        # price
             nonempty(row[7]),     # phoneNumber
             url,                  # url
             nonempty(row[9]),     # websiteUrl
